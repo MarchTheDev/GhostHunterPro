@@ -1,0 +1,2124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ghost Hunter Pro</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: rgba(18, 25, 42, 0.82);
+      --panel-2: rgba(23, 33, 54, 0.9);
+      --border: rgba(255,255,255,0.08);
+      --text: #ecf2fb;
+      --muted: #8a96ad;
+      --cyan: #1ac7ff;
+      --cyan-2: #0bb2e3;
+      --purple: #a24cff;
+      --green: #22c76e;
+      --red: #ff5b57;
+      --shadow: 0 20px 60px rgba(0,0,0,.38);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(900px 500px at 50% 40%, rgba(84,25,166,0.12), transparent 70%),
+        radial-gradient(700px 500px at 50% 20%, rgba(24,163,211,0.08), transparent 75%),
+        linear-gradient(180deg, #08101b 0%, #070b14 100%);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(32, 54, 88, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(32, 54, 88, 0.18) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: linear-gradient(to bottom, rgba(255,255,255,.85), rgba(255,255,255,.35));
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(106, 131, 170, .7) rgba(255,255,255,.04);
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(108,128,161,.92), rgba(80,98,128,.92));
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.04);
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(132,153,190,.96), rgba(95,113,146,.96));
+    }
+
+    .app {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px 18px;
+      flex: 0 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      font-size: 24px;
+      line-height: 1;
+      text-shadow: 0 0 12px rgba(26,199,255,.55);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      letter-spacing: .2px;
+      font-size: 18px;
+      background: linear-gradient(90deg, var(--cyan), #6aa7ff 55%, #b883ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-sub {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .brand-sub .desktop {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 0 28px rgba(26,199,255,.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .tab {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 15px;
+      padding: 12px 20px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .tab.active {
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 0 20px rgba(118,97,255,.12);
+    }
+
+    .tab.home-nav {
+      min-width: 132px;
+      background: linear-gradient(90deg, rgba(17,183,223,.14), rgba(162,76,255,.12));
+      border: 1px solid rgba(126,217,255,.16);
+      color: #eef8ff;
+      box-shadow: 0 0 18px rgba(26,199,255,.08), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .tab.home-nav:hover {
+      background: linear-gradient(90deg, rgba(17,183,223,.2), rgba(162,76,255,.18));
+      transform: translateY(-1px);
+    }
+
+    .tab.home-nav.active {
+      background: linear-gradient(90deg, rgba(17,183,223,.24), rgba(162,76,255,.2));
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 0 24px rgba(26,199,255,.14);
+    }
+
+    .tab-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin-right: 8px;
+      vertical-align: -5px;
+      color: #7fd9ff;
+      background: rgba(127,217,255,.10);
+      border: 1px solid rgba(127,217,255,.18);
+      border-radius: 8px;
+      filter: drop-shadow(0 0 6px rgba(26,199,255,.18));
+    }
+
+    .tab.active .tab-icon {
+      color: white;
+    }
+
+    .tab-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .view-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .view {
+      display: none;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 6px 28px 36px;
+    }
+
+    .view.active { display: block; }
+
+    .hero {
+      max-width: 860px;
+      margin: 92px auto 40px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(52px, 7vw, 72px);
+      line-height: .95;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .hero h1 span.grad {
+      background: linear-gradient(90deg, var(--cyan), #4b8bff 55%, #9f65ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    .search-wrap {
+      position: relative;
+      max-width: 880px;
+      margin: 38px auto 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn.hero-link {
+      border: 1px solid rgba(26,199,255,.18);
+      background: linear-gradient(90deg, rgba(17,183,223,.18), rgba(162,76,255,.16));
+      color: #eef8ff;
+      box-shadow: 0 0 22px rgba(26,199,255,.12), 0 10px 24px rgba(0,0,0,.18);
+      font-size: 15px;
+      padding: 13px 22px;
+      font-weight: 800;
+    }
+
+    .btn.hero-link:hover {
+      background: linear-gradient(90deg, rgba(17,183,223,.24), rgba(162,76,255,.22));
+      box-shadow: 0 0 28px rgba(26,199,255,.16), 0 12px 28px rgba(0,0,0,.2);
+    }
+
+    .search-shell {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2px;
+      border-radius: 24px;
+      background: linear-gradient(90deg, rgba(17,198,255,.35), rgba(164,76,255,.42));
+      box-shadow: 0 0 40px rgba(36,171,255,.18), 0 0 50px rgba(162,76,255,.12);
+    }
+
+    .search-inner {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 8px 8px 8px 18px;
+      border-radius: 22px;
+      background: rgba(5, 11, 21, .96);
+    }
+
+    .search-icon {
+      color: var(--muted);
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+
+    .search-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      color: var(--text);
+      background: transparent;
+      font-size: 17px;
+      padding: 12px 0;
+    }
+
+    .search-input::placeholder { color: #67748d; }
+
+    .suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 10px);
+      z-index: 10;
+      overflow: hidden;
+      border-radius: 18px;
+      background: rgba(16, 22, 38, .96);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .suggestion {
+      width: 100%;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    .suggestion:first-child { border-top: 0; }
+    .suggestion:hover { background: rgba(255,255,255,.05); }
+
+    .suggestion img,
+    .suggestion .fallback {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex: 0 0 auto;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.05);
+    }
+
+    .suggestion .fallback {
+      display: grid;
+      place-items: center;
+      color: rgba(255,255,255,.35);
+      font-size: 22px;
+    }
+
+    .suggestion-title {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .suggestion-sub {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 14px;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: .2s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.07);
+    }
+
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn.primary {
+      border: 0;
+      color: white;
+      background: linear-gradient(90deg, var(--cyan-2), var(--purple));
+      box-shadow: 0 10px 28px rgba(112,78,255,.25);
+    }
+
+    .btn.pill { border-radius: 14px; }
+
+    .btn.filter.active {
+      background: rgba(162,76,255,.18);
+      border-color: rgba(162,76,255,.32);
+      color: #f1dbff;
+      box-shadow: 0 0 0 1px rgba(162,76,255,.16) inset;
+    }
+
+    .btn.good {
+      background: rgba(35, 199, 110, .16);
+      border-color: rgba(35,199,110,.22);
+      color: #dff8eb;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .home-mini {
+      margin: 28px auto 0;
+      text-align: center;
+      color: #73809a;
+      font-size: 14px;
+    }
+
+    .history-card {
+      max-width: 980px;
+      margin: 28px auto 0;
+      padding: 18px 18px 20px;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .history-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #dfe9f7;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .history-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      padding: 8px 10px;
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+
+    .history-open {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .history-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--cyan);
+    }
+
+    .history-remove {
+      appearance: none;
+      border: 0;
+      background: rgba(255,91,87,.12);
+      color: #ffb1af;
+      border-radius: 8px;
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      opacity: .0;
+      transition: .16s ease;
+    }
+
+    .history-pill:hover .history-remove,
+    .history-remove:focus-visible {
+      opacity: 1;
+    }
+
+    .history-clear {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: #8c97ab;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .history-clear:hover {
+      color: #c7d3e6;
+    }
+
+    .home-tools {
+      max-width: 980px;
+      margin: 18px auto 0;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .home-results {
+      max-width: 980px;
+      margin: 18px auto 0;
+      padding: 16px;
+      display: none;
+    }
+
+    .home-results.visible { display: block; }
+
+    .result-head {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 8px 8px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .result-head img {
+      width: 320px;
+      height: 150px;
+      border-radius: 16px;
+      object-fit: cover;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.05);
+    }
+
+    .result-info {
+      flex: 1 1 360px;
+      min-width: 280px;
+    }
+
+    .result-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .tags {
+      margin: 14px 0 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.05);
+      color: #d7e7ff;
+    }
+
+    .tag.cyan { background: rgba(17,183,223,.14); color: #bcedff; }
+    .tag.purple { background: rgba(142,115,255,.14); color: #e0d9ff; }
+    .tag.orange { background: rgba(255,157,77,.14); color: #ffe2c8; }
+    .tag.red { background: rgba(255,91,87,.18); color: #ffe0df; }
+    .tag.legit { background: rgba(26,199,255,.16); color: #dff8ff; border-color: rgba(26,199,255,.22); }
+
+    .summary-line {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section-title {
+      margin: 22px 8px 12px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: #7486a3;
+      font-weight: 800;
+    }
+
+    .path-section {
+      margin: 0 0 14px;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+    }
+
+    .path-section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .path-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    .path-row:first-child { border-top: 0; }
+    .path-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .path-actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+    }
+    .path-code {
+      display: block;
+      margin-top: 6px;
+      color: #b7eaff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .check {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--cyan-2);
+      cursor: pointer;
+    }
+
+    .tiny-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tiny-btn:hover { background: rgba(255,255,255,.09); }
+
+    .tiny-btn.danger {
+      color: #ffe3e2;
+      background: rgba(255,91,87,.15);
+      border-color: rgba(255,91,87,.24);
+    }
+
+    .empty, .loading-state {
+      max-width: 880px;
+      margin: 120px auto 0;
+      padding: 42px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty .big,
+    .loading-state .big {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 18px;
+      border: 3px solid rgba(255,255,255,.10);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .library-shell {
+      max-width: 1100px;
+      margin: 18px auto 0;
+    }
+
+    .library-header {
+      text-align: center;
+      margin: 18px 0 28px;
+    }
+
+    .library-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .library-sub {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .search-inline {
+      flex: 1 1 520px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+    }
+
+    .search-inline input {
+      flex: 1 1 auto;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .search-inline input::placeholder { color: #6f7b91; }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-actions .btn.bulk {
+      background: rgba(17,183,223,.12);
+      border-color: rgba(17,183,223,.22);
+      color: #d8f7ff;
+    }
+
+    .library-meta {
+      color: #c4cfde;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 8px 2px 18px;
+    }
+
+    .library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      padding-bottom: 20px;
+    }
+
+    .game-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(18,28,48,.95), rgba(15,20,34,.92));
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      transition: .18s ease;
+    }
+
+    .game-card.selected {
+      border-color: rgba(26,199,255,.45);
+      box-shadow: 0 0 0 1px rgba(26,199,255,.18), var(--shadow);
+    }
+
+    .game-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    .card-media,
+    .card-body {
+      cursor: pointer;
+    }
+
+    .card-media {
+      position: relative;
+      height: 118px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 25%, rgba(39,206,255,.12), transparent 60%),
+        linear-gradient(180deg, rgba(26,36,58,.98), rgba(13,18,30,.98));
+    }
+
+    .card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: rgba(255,255,255,.28);
+      font-size: 44px;
+      font-weight: 800;
+    }
+
+    .status-badge {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: linear-gradient(90deg, rgba(126, 22, 36, .98), rgba(86, 18, 31, .98));
+      border: 1px solid rgba(255, 137, 137, .24);
+      color: #fff7f7;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: .01em;
+      box-shadow: 0 10px 18px rgba(255, 82, 82, .14), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      text-shadow: 0 1px 0 rgba(0,0,0,.28);
+      white-space: nowrap;
+    }
+
+    .archive-badge {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: linear-gradient(90deg, rgba(100, 58, 188, .98), rgba(68, 40, 137, .98));
+      border: 1px solid rgba(214, 191, 255, .18);
+      color: white;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: .01em;
+      box-shadow: 0 10px 18px rgba(140, 82, 255, .14), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+    }
+
+    .badge-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      opacity: .98;
+    }
+
+    .badge-icon svg,
+    .archive-fab svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .archive-fab {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 4;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      background: rgba(7, 11, 20, .96);
+      color: #f7fbff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 22px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+      transition: .18s ease;
+      opacity: 0;
+      transform: translateY(-4px) scale(.96);
+      pointer-events: none;
+      padding: 0;
+    }
+
+    .game-card:hover .archive-fab,
+    .game-card:focus-within .archive-fab,
+    .archive-fab:hover,
+    .archive-fab:focus-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .archive-fab.archive {
+      background: linear-gradient(180deg, rgba(95, 57, 178, .98), rgba(71, 40, 137, .98));
+      border-color: rgba(211, 190, 255, .18);
+    }
+
+    .archive-fab.restore {
+      background: linear-gradient(180deg, rgba(19, 145, 88, .98), rgba(14, 109, 67, .98));
+      border-color: rgba(177, 245, 214, .16);
+    }
+
+    .select-fab {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 4;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(7, 11, 20, .94);
+      display: grid;
+      place-items: center;
+      color: #dff8ff;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(0,0,0,.22);
+      transition: .18s ease;
+      opacity: 0;
+      transform: translateY(-4px) scale(.96);
+      pointer-events: none;
+      padding: 0;
+    }
+
+    .game-card:hover .select-fab,
+    .game-card.selected .select-fab,
+    .game-card:focus-within .select-fab,
+    .select-fab:hover,
+    .select-fab:focus-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .select-fab svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .select-fab.active {
+      background: linear-gradient(180deg, rgba(15, 169, 221, .98), rgba(9, 129, 170, .98));
+      border-color: rgba(163, 238, 255, .22);
+      color: white;
+    }
+
+    .card-body { padding: 14px 14px 16px; }
+
+    .game-title {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 42px;
+    }
+
+    .game-sub {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .game-flags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      color: #e7f7ff;
+    }
+
+    .mini-badge.legit {
+      background: rgba(26,199,255,.12);
+      border-color: rgba(26,199,255,.18);
+      color: #dff7ff;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(5, 8, 15, .54);
+      backdrop-filter: blur(12px);
+      z-index: 40;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .confirm-card {
+      width: min(460px, 100%);
+      background: rgba(11, 16, 28, .97);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 22px;
+      box-shadow: 0 32px 90px rgba(0,0,0,.46);
+      padding: 18px;
+      animation: tvOpen .22s ease-out;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0 0 10px;
+    }
+
+    .confirm-text {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-line;
+      margin-bottom: 18px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .confirm-actions .btn {
+      min-width: 112px;
+    }
+
+    .modal-card {
+      width: min(980px, 100%);
+      max-height: calc(100vh - 56px);
+      overflow: auto;
+      background: rgba(11, 16, 28, .94);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 24px;
+      box-shadow: 0 40px 100px rgba(0,0,0,.45);
+      transform-origin: center;
+      animation: tvOpen .28s ease-out;
+    }
+
+    @keyframes tvOpen {
+      0% { opacity: 0; transform: scaleX(.96) scaleY(.06); filter: brightness(1.25); }
+      55% { opacity: 1; transform: scaleX(1.02) scaleY(.18); }
+      100% { opacity: 1; transform: scaleX(1) scaleY(1); }
+    }
+
+    .modal-top {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: linear-gradient(180deg, rgba(11,16,28,.98), rgba(11,16,28,.92));
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .modal-head { padding: 16px 18px 14px; }
+
+    .modal-cover {
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+      display: block;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.04);
+    }
+
+    .modal-title-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .modal-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .modal-close {
+      appearance: none;
+      border: 0;
+      background: rgba(255,255,255,.06);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .modal-body { padding: 18px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 14px 0 4px;
+    }
+
+    .footer {
+      flex: 0 0 auto;
+      padding: 18px 20px 26px;
+      text-align: center;
+      color: rgba(136, 149, 173, 0.56);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(16, 22, 38, .95);
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    .toast.show { opacity: 1; }
+
+    .scroll-top-btn {
+      position: fixed;
+      right: 28px;
+      bottom: 96px;
+      z-index: 50;
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(10, 16, 28, .92);
+      color: #ecf2fb;
+      display: inline-grid;
+      place-items: center;
+      box-shadow: 0 18px 34px rgba(0,0,0,.28);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px) scale(.96);
+      transition: .18s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .scroll-top-btn.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .scroll-top-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @media (max-width: 860px) {
+      .topbar { padding-inline: 18px; }
+      .view { padding-inline: 18px; }
+      .hero { margin-top: 60px; }
+      .search-inner { flex-wrap: wrap; }
+      .search-shell { border-radius: 22px; }
+      .result-head img { width: 100%; height: 180px; }
+      .path-row { grid-template-columns: auto 1fr; }
+      .path-actions { margin-left: 30px; flex-wrap: wrap; justify-content: flex-start; }
+      .library-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">👻</div>
+        <div>
+          <div class="brand-title">Ghost Hunter Pro</div>
+          <div class="brand-sub">v2.3.2 • <span class="desktop">Desktop Mode</span></div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab home-nav active" data-action="switch-tab" data-tab="home"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"></path><path d="M7 10.5V19h10v-8.5"></path><path d="M10 19v-4.5h4V19"></path></svg></span>Home</button>
+      </div>
+    </header>
+
+    <div class="view-wrap">
+      <section id="view-home" class="view active"></section>
+      <section id="view-library" class="view"></section>
+    </div>
+
+    <footer class="footer">
+      Ghost Hunter Pro v2.3.2 • Not affiliated with Valve or Steam<br />
+      Paths are generated based on common known locations. Always verify before deleting.
+    </footer>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay"></div>
+  <div id="confirm-overlay" class="modal-overlay"></div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const state = {
+      backendReady: false,
+      activeTab: 'home',
+      homeLoading: false,
+      homeResult: null,
+      homeQuery: '',
+      homeSuggestions: [],
+      homeHistory: [],
+      libraryLoading: false,
+      libraryLoaded: false,
+      libraryItems: [],
+      libraryQuery: '',
+      libraryFilter: 'active',
+      selectedLibraryAppIds: [],
+      libraryShowScrollTop: false,
+      modalGameId: null,
+      confirmDialog: null,
+    };
+
+    let suggestionTimer = null;
+    let confirmResolver = null;
+
+    const $home = document.getElementById('view-home');
+    const $library = document.getElementById('view-library');
+    const $modal = document.getElementById('modal-overlay');
+    const $confirm = document.getElementById('confirm-overlay');
+    const $toast = document.getElementById('toast');
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    function formatSize(size) {
+      const num = Number(size || 0);
+      if (!num) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let value = num;
+      let idx = 0;
+      while (value >= 1024 && idx < units.length - 1) {
+        value /= 1024;
+        idx += 1;
+      }
+      return `${value.toFixed(1)} ${units[idx]}`;
+    }
+
+    function toast(message) {
+      $toast.textContent = message;
+      $toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => $toast.classList.remove('show'), 2200);
+    }
+
+    async function waitForBackend() {
+      if (window.pywebview && window.pywebview.api) return true;
+      return new Promise(resolve => {
+        let done = false;
+        const finish = value => {
+          if (done) return;
+          done = true;
+          resolve(value);
+        };
+        document.addEventListener('pywebviewready', () => finish(true), { once: true });
+        const poll = setInterval(() => {
+          if (window.pywebview && window.pywebview.api) {
+            clearInterval(poll);
+            finish(true);
+          }
+        }, 100);
+        setTimeout(() => {
+          clearInterval(poll);
+          finish(!!(window.pywebview && window.pywebview.api));
+        }, 3500);
+      });
+    }
+
+    async function apiCall(method, ...args) {
+      if (!(window.pywebview && window.pywebview.api && window.pywebview.api[method])) {
+        throw new Error('Desktop backend not available');
+      }
+      return window.pywebview.api[method](...args);
+    }
+
+    function categoryIcon(category) {
+      if (category.startsWith('Crack Leftovers')) return '🔍';
+      if (category.startsWith('Steam ')) return '🎯';
+      if (category === 'NVIDIA') return '🎮';
+      if (category === 'Documents' || category === 'Public Documents') return '📄';
+      if (category === 'Saved Games') return '💾';
+      if (category === 'Temp Files') return '🗑';
+      return '📁';
+    }
+
+    function groupedPaths(paths) {
+      const groups = new Map();
+      for (const path of paths || []) {
+        const list = groups.get(path.category) || [];
+        list.push(path);
+        groups.set(path.category, list);
+      }
+      return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
+    function getFilteredLibraryItems() {
+      const query = state.libraryQuery.trim().toLowerCase();
+      return state.libraryItems.filter(item => {
+        if (state.libraryFilter === 'active' && item.archived) return false;
+        if (state.libraryFilter === 'archived' && !item.archived) return false;
+        if (!query) return true;
+        return item.name.toLowerCase().includes(query) || String(item.appid).includes(query);
+      });
+    }
+
+    function countActive() {
+      return state.libraryItems.filter(item => !item.archived).length;
+    }
+
+    function countArchived() {
+      return state.libraryItems.filter(item => item.archived).length;
+    }
+
+    function selectedLibraryCount() {
+      return state.selectedLibraryAppIds.length;
+    }
+
+    function isLibrarySelected(appid) {
+      return state.selectedLibraryAppIds.includes(String(appid));
+    }
+
+    function syncSelectedLibraryIds() {
+      const available = new Set(state.libraryItems.map(item => String(item.appid)));
+      state.selectedLibraryAppIds = state.selectedLibraryAppIds.filter(appid => available.has(String(appid)));
+    }
+
+    function toggleLibrarySelection(appid) {
+      const key = String(appid);
+      if (isLibrarySelected(key)) {
+        state.selectedLibraryAppIds = state.selectedLibraryAppIds.filter(value => value !== key);
+      } else {
+        state.selectedLibraryAppIds = [...state.selectedLibraryAppIds, key];
+      }
+    }
+
+    function collectSelectedLibraryPaths() {
+      const selected = new Set(state.selectedLibraryAppIds.map(String));
+      return state.libraryItems
+        .filter(item => selected.has(String(item.appid)))
+        .flatMap(item => (item.paths || []).map(path => path.path));
+    }
+
+    function selectedHomePaths() {
+      return [...document.querySelectorAll('.home-path-check:checked')].map(el => el.dataset.path).filter(Boolean);
+    }
+
+    function selectedModalPaths() {
+      return [...document.querySelectorAll('.modal-path-check:checked')].map(el => el.dataset.path).filter(Boolean);
+    }
+
+    function copyText(text) {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      try {
+        document.execCommand('copy');
+        toast('Copied');
+      } catch {
+        toast('Copy failed');
+      }
+      document.body.removeChild(area);
+    }
+
+    async function openSteamDB(appid) {
+      try {
+        await apiCall('open_url', `https://steamdb.info/app/${appid}/`);
+      } catch {
+        toast('Could not open SteamDB');
+      }
+    }
+
+    async function openPath(path) {
+      try {
+        const response = await apiCall('open_path', path);
+        if (!response.ok) throw new Error(response.error || 'Could not open path');
+      } catch (error) {
+        toast(error.message || 'Could not open path');
+      }
+    }
+
+    async function updateSuggestions(query) {
+      const clean = (query || '').trim();
+      if (clean.length < 2) {
+        state.homeSuggestions = [];
+        renderHome();
+        return;
+      }
+      try {
+        const suggestions = await apiCall('search_suggestions', clean);
+        const currentInput = document.getElementById('home-search-input');
+        const liveValue = (currentInput && currentInput.value ? currentInput.value : state.homeQuery).trim();
+        if (liveValue !== clean) return;
+        state.homeSuggestions = Array.isArray(suggestions) ? suggestions.slice(0, 6) : [];
+        renderHome();
+        const input = document.getElementById('home-search-input');
+        if (input) {
+          input.focus();
+          input.setSelectionRange(clean.length, clean.length);
+        }
+      } catch {
+        state.homeSuggestions = [];
+        renderHome();
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const history = await apiCall('get_history');
+        state.homeHistory = Array.isArray(history) ? history : [];
+      } catch {
+        state.homeHistory = [];
+      }
+    }
+
+    function clearHomeView() {
+      state.homeResult = null;
+      state.homeLoading = false;
+      state.homeQuery = '';
+      state.homeSuggestions = [];
+      renderAll();
+    }
+
+    function renderHome() {
+      const result = state.homeResult;
+      const historyHtml = state.homeHistory.length ? `
+        <div class="history-card card">
+          <div class="history-head">
+            <div class="history-title">Recent Hunts</div>
+            <button class="history-clear" data-action="clear-history">🗑 Clear History</button>
+          </div>
+          <div class="history-list">
+            ${state.homeHistory.map(item => `
+              <div class="history-pill">
+                <button class="history-open" data-action="history-search" data-appid="${escapeHtml(item.appid)}" data-name="${escapeHtml(item.name)}">
+                  <span class="history-icon">👻</span>
+                  <span>${escapeHtml(item.name)}</span>
+                </button>
+                <button class="history-remove" title="Remove from history" data-action="history-remove" data-appid="${escapeHtml(item.appid)}">✕</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+      let resultsHtml = '';
+      if (result) {
+        const groups = groupedPaths(result.paths || []);
+        resultsHtml = `
+          <div class="home-results visible card">
+            <div class="result-head">
+              ${result.game.header_image ? `<img src="${escapeHtml(result.game.header_image)}" alt="" onerror="this.style.display='none'" />` : ''}
+              <div class="result-info">
+                <h2 class="result-title">${escapeHtml(result.game.name)}</h2>
+                <div class="tags">
+                  <span class="tag cyan">#${escapeHtml(result.game.appid)}</span>
+                  ${(result.game.developers || []).length ? `<span class="tag purple">${escapeHtml(result.game.developers[0])}</span>` : ''}
+                  ${(result.game.publishers || []).length ? `<span class="tag orange">${escapeHtml(result.game.publishers[0])}</span>` : ''}
+                </div>
+                <div class="summary-line">${result.paths.length} leftover path(s) found • ${formatSize(result.total_size)}</div>
+                <div class="summary-line" style="margin-top:8px;">${escapeHtml(result.game.short_description || '')}</div>
+                <div class="modal-actions" style="margin-top:16px;">
+                  <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(result.game.appid)}">Open on SteamDB</button>
+                  <button class="btn primary" data-action="home-delete-all">Delete All</button>
+                  <button class="btn" data-action="home-delete-selected">Delete Selected</button>
+                  <button class="btn" data-action="home-copy-selected">Copy Selected Paths</button>
+                </div>
+              </div>
+            </div>
+            <div class="section-title">Found Paths</div>
+            ${groups.map(([category, items]) => `
+              <div class="path-section">
+                <div class="path-section-head">
+                  <span>${categoryIcon(category)} ${escapeHtml(category)}</span>
+                  <span>${items.length} item${items.length === 1 ? '' : 's'}</span>
+                </div>
+                ${items.map((item, index) => `
+                  <div class="path-row">
+                    <input class="check home-path-check" type="checkbox" checked data-path="${escapeHtml(item.path)}" id="home-${index}-${escapeHtml(category)}" />
+                    <div>
+                      <div>${escapeHtml(item.description || '')}</div>
+                      <div class="path-desc">${formatSize(item.size)}</div>
+                      <code class="path-code">${escapeHtml(item.path)}</code>
+                    </div>
+                    <div class="path-actions">
+                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button>
+                      <button class="tiny-btn" data-action="copy-path" data-path="${escapeHtml(item.path)}">Copy</button>
+                      <button class="tiny-btn danger" data-action="delete-path" data-path="${escapeHtml(item.path)}">Delete</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      $home.innerHTML = `
+        <div class="hero">
+          <h1><span class="grad">Ghost Hunter</span> Pro</h1>
+          <p>Find and eliminate leftover game files lurking in your system.<br />Enter a game name or Steam AppID to begin the hunt.</p>
+          <div class="search-wrap">
+            <form class="search-shell" id="home-search-form">
+              <div class="search-inner">
+                <div class="search-icon">🎮</div>
+                <input class="search-input" id="home-search-input" autocomplete="off" value="${escapeHtml(state.homeQuery)}" placeholder="Enter game name or Steam AppID..." />
+                <button class="btn primary pill" type="submit" ${state.homeLoading ? 'disabled' : ''}>${state.homeLoading ? 'Scanning...' : 'Hunt'}</button>
+              </div>
+            </form>
+            ${state.homeSuggestions.length ? `
+              <div class="suggestions">
+                ${state.homeSuggestions.map(item => `
+                  <button class="suggestion" type="button" data-action="pick-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+                    ${item.tiny_image ? `<img src="${escapeHtml(item.tiny_image)}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" /><div class="fallback" style="display:none">👻</div>` : `<div class="fallback">👻</div>`}
+                    <div>
+                      <div class="suggestion-title">${escapeHtml(item.name)}</div>
+                      <div class="suggestion-sub">AppID: ${escapeHtml(item.id)}</div>
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+          <div class="hero-actions">
+            <button class="btn hero-link" data-action="switch-tab" data-tab="library">Browse Library</button>
+          </div>
+        </div>
+        ${result ? `<div class="home-tools"><button class="btn primary" data-action="home-clear">✕ Close</button></div>` : ""}
+        ${resultsHtml}
+        ${!result && state.homeLoading ? `
+          <div class="loading-state card">
+            <div class="spinner"></div>
+            <div class="big">Searching and checking known locations...</div>
+            <div>This may take a few seconds depending on how many common folders exist on your system.</div>
+          </div>
+        ` : ''}
+        ${historyHtml}
+      `;
+    }
+
+    function renderLibrary() {
+      syncSelectedLibraryIds();
+      const filtered = getFilteredLibraryItems();
+      const activeCount = countActive();
+      const archivedCount = countArchived();
+      const bulkCount = selectedLibraryCount();
+      let content = '';
+
+      if (state.libraryLoading) {
+        content = `
+          <div class="loading-state card">
+            <div class="spinner"></div>
+            <div class="big">Scanning your PC for leftover games...</div>
+            <div>Looking through known crack leftover and app-based folders.</div>
+          </div>
+        `;
+      } else if (!state.libraryLoaded || state.libraryItems.length === 0) {
+        content = `
+          <div class="empty card">
+            <div class="big">No leftover games found yet</div>
+            <div style="margin-bottom:18px;">Scan your system for known crack leftover folders and app-based traces.</div>
+            <button class="btn primary" data-action="library-scan">👻 Scan for Leftover Games</button>
+          </div>
+        `;
+      } else if (filtered.length === 0) {
+        content = `
+          <div class="empty card">
+            <div class="big">No games match this view</div>
+            <div>${state.libraryQuery ? 'Try a different search term or switch filters.' : 'There are no games in this section right now.'}</div>
+          </div>
+        `;
+      } else {
+        content = `
+          <div class="library-meta">${state.libraryFilter === 'archived' ? `${archivedCount} archived game${archivedCount === 1 ? '' : 's'}` : `${activeCount} games with leftover files found`}</div>
+          <div class="library-grid">
+            ${filtered.map(item => `
+              <article class="game-card ${isLibrarySelected(item.appid) ? 'selected' : ''}">
+                <button class="select-fab ${isLibrarySelected(item.appid) ? 'active' : ''}" title="${isLibrarySelected(item.appid) ? 'Deselect this game' : 'Select this game'}" data-action="toggle-select-game" data-appid="${escapeHtml(item.appid)}">${isLibrarySelected(item.appid)
+                  ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 16.5 19 7.5"></path></svg>`
+                  : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>`}</button>
+                <button class="archive-fab ${item.archived ? 'restore' : 'archive'}" title="${item.archived ? 'Restore this game' : 'Archive this game'}" data-action="toggle-archive" data-appid="${escapeHtml(item.appid)}" data-archived="${item.archived ? '1' : '0'}">${item.archived
+                  ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10 5 14l4 4"></path><path d="M5 14h9a5 5 0 0 0 0-10h-1"></path></svg>`
+                  : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16"></path><path d="M6 7.5V19h12V7.5"></path><path d="M9 11.5h6"></path><path d="M9 4.5h6l1 3H8l1-3z"></path></svg>`}</button>
+                <div class="card-media" data-action="open-game" data-appid="${escapeHtml(item.appid)}">
+                  ${item.header_image ? `<img src="${escapeHtml(item.header_image)}" alt="" onerror="this.remove(); this.parentElement.querySelector('.card-fallback').style.display='grid';" />` : ''}
+                  <div class="card-fallback" style="display:${item.header_image ? 'none' : 'grid'}">👻</div>
+                  ${item.archived
+                    ? `<div class="archive-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16"></path><path d="M6 7.5V19h12V7.5"></path><path d="M9 4.5h6l1 3H8l1-3z"></path></svg></span>Archived</div>`
+                    : `<div class="status-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M8 6h8"></path><path d="M6 6h12l-1 14H7L6 6z"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></span>Leftovers found</div>`}
+                </div>
+                <div class="card-body" data-action="open-game" data-appid="${escapeHtml(item.appid)}">
+                  <div class="game-title">${escapeHtml(item.name)}</div>
+                  <div class="game-sub">AppID: ${escapeHtml(item.appid)}</div>
+                  ${item.legit_owned ? `<div class="game-flags"><span class="mini-badge legit">Steam copy detected</span></div>` : ''}
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      $library.innerHTML = `
+        <div class="library-shell">
+          <div class="library-header">
+            <div class="library-pill">▥ Leftover Library</div>
+            <div class="library-sub">Scan your system for known crack leftover folders and see which games<br />left traces behind.</div>
+          </div>
+          <div class="toolbar">
+            <label class="search-inline">
+              <span style="color:#75839c;">⌕</span>
+              <input id="library-filter-input" value="${escapeHtml(state.libraryQuery)}" placeholder="Filter games by name or AppID..." />
+            </label>
+            <div class="toolbar-actions">
+              <button class="btn filter ${state.libraryFilter === 'active' ? 'active' : ''}" data-action="library-filter" data-filter="active">👁 Show Active (${activeCount})</button>
+              <button class="btn filter ${state.libraryFilter === 'archived' ? 'active' : ''}" data-action="library-filter" data-filter="archived">🗃 Archive (${archivedCount})</button>
+              <button class="btn bulk" data-action="library-delete-selected" ${bulkCount ? '' : 'disabled'}>🧹 Delete Selected (${bulkCount})</button>
+              <button class="btn" data-action="library-rescan" ${state.libraryLoading ? 'disabled' : ''}>↻ Rescan</button>
+            </div>
+          </div>
+          ${content}
+        </div>
+        <button class="scroll-top-btn ${state.libraryShowScrollTop ? 'show' : ''}" data-action="library-scroll-top" title="Back to top" aria-label="Back to top">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
+        </button>
+      `;
+    }
+
+    function renderTabs() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === state.activeTab);
+      });
+      document.getElementById('view-home').classList.toggle('active', state.activeTab === 'home');
+      document.getElementById('view-library').classList.toggle('active', state.activeTab === 'library');
+    }
+
+    function renderConfirm() {
+      if (!state.confirmDialog) {
+        $confirm.classList.remove('show');
+        $confirm.innerHTML = '';
+        return;
+      }
+      const dialog = state.confirmDialog;
+      $confirm.classList.add('show');
+      $confirm.innerHTML = `
+        <div class="confirm-card card" role="dialog" aria-modal="true">
+          <h3 class="confirm-title">${escapeHtml(dialog.title || 'Confirm action')}</h3>
+          <div class="confirm-text">${escapeHtml(dialog.message || '')}</div>
+          <div class="confirm-actions">
+            <button class="btn" data-action="confirm-cancel">${escapeHtml(dialog.cancelText || 'Cancel')}</button>
+            <button class="btn primary" data-action="confirm-ok">${escapeHtml(dialog.confirmText || 'Confirm')}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function settleConfirm(value) {
+      const resolver = confirmResolver;
+      confirmResolver = null;
+      state.confirmDialog = null;
+      renderConfirm();
+      if (resolver) resolver(value);
+    }
+
+    function showConfirm({ title, message, confirmText = 'Delete', cancelText = 'Cancel' }) {
+      state.confirmDialog = { title, message, confirmText, cancelText };
+      renderConfirm();
+      return new Promise(resolve => {
+        confirmResolver = resolve;
+      });
+    }
+
+    function updateLibraryScrollButton() {
+      const libraryView = document.getElementById('view-library');
+      const button = document.querySelector('.scroll-top-btn');
+      const show = state.activeTab === 'library' && !!libraryView && libraryView.scrollTop > 260;
+      state.libraryShowScrollTop = show;
+      if (button) {
+        button.classList.toggle('show', show);
+      }
+    }
+
+    function renderModal() {
+      if (!state.modalGameId) {
+        $modal.classList.remove('show');
+        $modal.innerHTML = '';
+        return;
+      }
+      const game = state.libraryItems.find(item => String(item.appid) === String(state.modalGameId));
+      if (!game) {
+        state.modalGameId = null;
+        renderModal();
+        return;
+      }
+      const groups = groupedPaths(game.paths || []);
+      $modal.classList.add('show');
+      $modal.innerHTML = `
+        <div class="modal-card card" role="dialog" aria-modal="true">
+          <div class="modal-top">
+            ${game.header_image ? `<img class="modal-cover" src="${escapeHtml(game.header_image)}" alt="" onerror="this.style.display='none'" />` : ''}
+            <div class="modal-head">
+              <div class="modal-title-row">
+                <div>
+                  <h3 class="modal-title">${escapeHtml(game.name)}</h3>
+                  <div class="tags" style="margin-top:12px;">
+                    <span class="tag cyan">#${escapeHtml(game.appid)}</span>
+                    <span class="tag red">${game.archived ? 'Archived' : 'Leftovers found'}</span>
+                    ${game.legit_owned ? `<span class="tag legit">Steam copy detected</span>` : ''}
+                    <span class="tag">${game.path_count} path${game.path_count === 1 ? '' : 's'}</span>
+                    <span class="tag">${formatSize(game.total_size)}</span>
+                  </div>
+                </div>
+                <button class="modal-close" data-action="close-modal">✕</button>
+              </div>
+              <div class="modal-actions">
+                <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}">Open on SteamDB</button>
+                <button class="btn primary" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
+                <button class="btn" data-action="modal-delete-selected" data-appid="${escapeHtml(game.appid)}">Delete Selected</button>
+                <button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Restore from Archive' : 'Archive this Game'}</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-body">
+            ${groups.map(([category, items]) => `
+              <div class="path-section">
+                <div class="path-section-head">
+                  <span>${categoryIcon(category)} ${escapeHtml(category)}</span>
+                  <span>${items.length} item${items.length === 1 ? '' : 's'}</span>
+                </div>
+                ${items.map((item, index) => `
+                  <div class="path-row">
+                    <input class="check modal-path-check" type="checkbox" checked data-path="${escapeHtml(item.path)}" id="modal-${escapeHtml(game.appid)}-${index}" />
+                    <div>
+                      <div>${escapeHtml(item.description || '')}</div>
+                      <div class="path-desc">${formatSize(item.size)}</div>
+                      <code class="path-code">${escapeHtml(item.path)}</code>
+                    </div>
+                    <div class="path-actions">
+                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button>
+                      <button class="tiny-btn" data-action="copy-path" data-path="${escapeHtml(item.path)}">Copy</button>
+                      <button class="tiny-btn danger" data-action="delete-path" data-path="${escapeHtml(item.path)}">Delete</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      renderHome();
+      renderLibrary();
+      renderTabs();
+      renderModal();
+      renderConfirm();
+    }
+
+    async function refreshLibrary(options = {}) {
+      const keepModal = options.keepModal !== false;
+      state.libraryLoading = true;
+      renderAll();
+      try {
+        const response = await apiCall('scan_library');
+        if (!response.ok) throw new Error(response.error || 'Failed to scan library');
+        state.libraryItems = response.items || [];
+        state.libraryLoaded = true;
+      } catch (error) {
+        toast(error.message || 'Library scan failed');
+      } finally {
+        state.libraryLoading = false;
+        syncSelectedLibraryIds();
+        if (keepModal && state.modalGameId && !state.libraryItems.some(item => String(item.appid) === String(state.modalGameId))) {
+          state.modalGameId = null;
+        }
+        renderAll();
+        updateLibraryScrollButton();
+      }
+    }
+
+    async function runHomeSearch() {
+      const input = document.getElementById('home-search-input');
+      const query = (input && input.value ? input.value : '').trim();
+      if (!query) return;
+      state.homeQuery = query;
+      state.homeLoading = true;
+      state.homeResult = null;
+      state.homeSuggestions = [];
+      renderAll();
+      try {
+        const response = await apiCall('home_search', query);
+        if (!response.ok) throw new Error(response.error || 'Search failed');
+        state.homeResult = response;
+        await loadHistory();
+      } catch (error) {
+        toast(error.message || 'Search failed');
+      } finally {
+        state.homeLoading = false;
+        renderAll();
+      }
+    }
+
+    async function deletePaths(paths, flags = {}) {
+      if (!paths.length) {
+        toast('Nothing selected');
+        return;
+      }
+      const ok = await showConfirm({
+        title: 'Confirm deletion',
+        message: `Delete ${paths.length} selected path(s)?\n\nThis action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      });
+      if (!ok) return;
+      try {
+        const response = await apiCall('delete_paths', paths);
+        const failedCount = (response.failed || []).length;
+        toast(failedCount ? `Deleted ${response.deleted} path(s), ${failedCount} failed` : `Deleted ${response.deleted} path(s)`);
+        if (flags.refreshHome && state.homeQuery) {
+          await runHomeSearch();
+        }
+        if (flags.refreshLibrary) {
+          await refreshLibrary();
+        }
+      } catch (error) {
+        toast(error.message || 'Delete failed');
+      }
+    }
+
+    async function toggleArchive(appid, currentlyArchived) {
+      try {
+        await apiCall('set_archived', String(appid), !currentlyArchived);
+        const item = state.libraryItems.find(game => String(game.appid) === String(appid));
+        if (item) item.archived = !currentlyArchived;
+        renderLibrary();
+        renderTabs();
+        if (state.modalGameId && String(state.modalGameId) === String(appid)) {
+          renderModal();
+        }
+      } catch {
+        toast('Archive action failed');
+      }
+    }
+
+    document.addEventListener('submit', async event => {
+      if (event.target && event.target.id === 'home-search-form') {
+        event.preventDefault();
+        await runHomeSearch();
+      }
+    });
+
+    document.addEventListener('input', event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.id === 'library-filter-input') {
+        state.libraryQuery = target.value;
+        renderLibrary();
+        renderTabs();
+      }
+      if (target.id === 'home-search-input') {
+        state.homeQuery = target.value;
+        clearTimeout(suggestionTimer);
+        suggestionTimer = setTimeout(() => updateSuggestions(target.value), 220);
+      }
+    });
+
+    document.addEventListener('click', async event => {
+      const clickedInsideSearch = event.target.closest('.search-wrap');
+      if (!clickedInsideSearch && state.homeSuggestions.length) {
+        state.homeSuggestions = [];
+        renderHome();
+      }
+      const actionEl = event.target.closest('[data-action]');
+      if (!actionEl) {
+        if (event.target === $modal) {
+          state.modalGameId = null;
+          renderModal();
+        }
+        if (event.target === $confirm) {
+          settleConfirm(false);
+        }
+        return;
+      }
+      const action = actionEl.dataset.action;
+      switch (action) {
+        case 'confirm-ok':
+          settleConfirm(true);
+          break;
+        case 'confirm-cancel':
+          settleConfirm(false);
+          break;
+        case 'switch-tab':
+          state.activeTab = actionEl.dataset.tab || 'home';
+          renderTabs();
+          updateLibraryScrollButton();
+          break;
+        case 'library-scan':
+        case 'library-rescan':
+          await refreshLibrary();
+          break;
+        case 'library-filter':
+          state.libraryFilter = actionEl.dataset.filter || 'active';
+          renderLibrary();
+          renderTabs();
+          break;
+        case 'toggle-select-game':
+          toggleLibrarySelection(actionEl.dataset.appid || '');
+          renderLibrary();
+          renderTabs();
+          updateLibraryScrollButton();
+          break;
+        case 'library-delete-selected': {
+          const selectedPaths = collectSelectedLibraryPaths();
+          state.selectedLibraryAppIds = [];
+          await deletePaths(selectedPaths, { refreshLibrary: true });
+          renderLibrary();
+          renderTabs();
+          updateLibraryScrollButton();
+          break;
+        }
+        case 'library-scroll-top': {
+          const libraryView = document.getElementById('view-library');
+          if (libraryView) libraryView.scrollTo({ top: 0, behavior: 'smooth' });
+          break;
+        }
+        case 'open-game':
+          state.modalGameId = actionEl.dataset.appid || null;
+          renderModal();
+          break;
+        case 'close-modal':
+          state.modalGameId = null;
+          renderModal();
+          break;
+        case 'open-steamdb':
+          await openSteamDB(actionEl.dataset.appid);
+          break;
+        case 'history-search':
+          state.homeQuery = actionEl.dataset.name || actionEl.dataset.appid || '';
+          state.homeSuggestions = [];
+          renderHome();
+          await runHomeSearch();
+          break;
+        case 'history-remove':
+          await apiCall('remove_history_item', actionEl.dataset.appid || '');
+          await loadHistory();
+          renderHome();
+          break;
+        case 'clear-history':
+          await apiCall('clear_history');
+          await loadHistory();
+          renderHome();
+          break;
+        case 'toggle-archive':
+          await toggleArchive(actionEl.dataset.appid, actionEl.dataset.archived === '1');
+          break;
+        case 'open-path':
+          await openPath(actionEl.dataset.path || '');
+          break;
+        case 'copy-path':
+          copyText(actionEl.dataset.path || '');
+          break;
+        case 'pick-suggestion':
+          state.homeQuery = actionEl.dataset.name || actionEl.dataset.appid || '';
+          state.homeSuggestions = [];
+          renderHome();
+          await runHomeSearch();
+          break;
+        case 'delete-path':
+          await deletePaths([actionEl.dataset.path].filter(Boolean), {
+            refreshHome: !!document.querySelector('.home-results.visible'),
+            refreshLibrary: !!state.libraryLoaded,
+          });
+          break;
+        case 'home-clear':
+          clearHomeView();
+          break;
+        case 'home-copy-selected': {
+          const paths = selectedHomePaths();
+          if (!paths.length) toast('Nothing selected');
+          else copyText(paths.join('\n'));
+          break;
+        }
+        case 'home-delete-selected':
+          await deletePaths(selectedHomePaths(), { refreshHome: true });
+          break;
+        case 'home-delete-all':
+          await deletePaths((state.homeResult?.paths || []).map(item => item.path), { refreshHome: true });
+          break;
+        case 'modal-delete-selected':
+          await deletePaths(selectedModalPaths(), { refreshLibrary: true });
+          break;
+        case 'modal-delete-all': {
+          const item = state.libraryItems.find(game => String(game.appid) === String(actionEl.dataset.appid));
+          await deletePaths((item?.paths || []).map(path => path.path), { refreshLibrary: true });
+          break;
+        }
+      }
+    });
+
+    async function bootstrap() {
+      renderAll();
+      state.backendReady = await waitForBackend();
+      if (!state.backendReady) {
+        toast('Desktop backend not available');
+        return;
+      }
+      try {
+        await apiCall('ping');
+      } catch {
+        toast('Desktop backend not available');
+        return;
+      }
+      const libraryView = document.getElementById('view-library');
+      if (libraryView) {
+        libraryView.addEventListener('scroll', updateLibraryScrollButton);
+      }
+      await loadHistory();
+      state.libraryLoading = true;
+      renderAll();
+      await refreshLibrary();
+      updateLibraryScrollButton();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

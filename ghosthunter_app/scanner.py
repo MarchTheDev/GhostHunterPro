@@ -1,0 +1,301 @@
+from __future__ import annotations
+
+import glob
+import os
+from typing import Any
+
+from .utils import get_name_variations, path_size
+
+
+class ScanEngine:
+    HOME_TEMPLATES = [
+        ("{APPDATA}\\{GAME}", "AppData (Roaming)", "Game config / save data", False, True, False, False),
+        ("{APPDATA}\\{DEV}\\{GAME}", "AppData (Roaming)", "Developer-organized game data", False, True, True, False),
+        ("{LOCAL}\\{GAME}", "AppData (Local)", "Local cache / settings", False, True, False, False),
+        ("{LOCAL}\\{DEV}\\{GAME}", "AppData (Local)", "Developer-organized local data", False, True, True, False),
+        ("{LOCALLOW}\\{GAME}", "AppData (LocalLow)", "LocalLow game data", False, True, False, False),
+        ("{LOCALLOW}\\{DEV}\\{GAME}", "AppData (LocalLow)", "Developer-organized LocalLow data", False, True, True, False),
+        ("{DOCS}\\{GAME}", "Documents", "Save files / screenshots", False, True, False, False),
+        ("{DOCS}\\My Games\\{GAME}", "Documents", "My Games folder", False, True, False, False),
+        ("{DOCS}\\{DEV}\\{GAME}", "Documents", "Developer-organized saves", False, True, True, False),
+        ("{PUBLICDOCS}\\{GAME}", "Public Documents", "Shared game data", False, True, False, False),
+        ("{PROGRAMDATA}\\{GAME}", "ProgramData", "System-wide game data", False, True, False, False),
+        ("{PROGRAMDATA}\\{DEV}\\{GAME}", "ProgramData", "Developer-organized ProgramData", False, True, True, False),
+        ("{SAVEDGAMES}\\{GAME}", "Saved Games", "Saved Games folder", False, True, False, False),
+        ("{TEMP}\\{GAME}", "Temp Files", "Temporary game files", False, True, False, False),
+        ("{LOCAL}\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\Recommendations\\{APPID}", "NVIDIA", "NVIDIA recommendations", True, False, False, False),
+        ("{LOCAL}\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\ApplicationOntology\\data\\wrappers\\{GAME}", "NVIDIA", "NVIDIA wrappers", False, True, False, False),
+        ("{LOCAL}\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\ApplicationOntology\\data\\translations\\{GAME}", "NVIDIA", "NVIDIA translations", False, True, False, False),
+        ("{APPDATA}\\STAR\\{APPID}", "Crack Leftovers (STAR)", "STAR app cache by AppID", True, False, False, False),
+        ("{APPDATA}\\STAR\\{APPID}\\{STEAMID}", "Crack Leftovers (STAR)", "STAR per-user cache folder", True, False, False, True),
+        ("{APPDATA}\\Steam\\CODEX\\{APPID}", "Crack Leftovers (CODEX)", "CODEX save/config data", True, False, False, False),
+        ("{APPDATA}\\Steam\\RUNE\\{APPID}", "Crack Leftovers (RUNE)", "RUNE emulator data", True, False, False, False),
+        ("{APPDATA}\\OnlineFix\\{APPID}", "Crack Leftovers (OnlineFix)", "OnlineFix data", True, False, False, False),
+        ("{APPDATA}\\EMPRESS\\{APPID}", "Crack Leftovers (EMPRESS)", "EMPRESS data", True, False, False, False),
+        ("{APPDATA}\\GSE Saves\\{APPID}", "Crack Leftovers (GSE)", "Goldberg Steam Emu saves", True, False, False, False),
+        ("{APPDATA}\\SmartSteamEmu\\{APPID}", "Crack Leftovers (SSE)", "SmartSteamEmu data", True, False, False, False),
+        ("{APPDATA}\\Goldberg SteamEmu Saves\\{APPID}", "Crack Leftovers (Goldberg)", "Goldberg emulator saves", True, False, False, False),
+        ("{APPDATA}\\ALI213\\{APPID}", "Crack Leftovers (ALI213)", "ALI213 crack data", True, False, False, False),
+        ("{STEAM}\\userdata\\*\\{APPID}", "Steam Userdata", "Steam cloud saves / configs", True, False, False, False),
+        ("{STEAM}\\steamapps\\shadercache\\{APPID}", "Steam Shader Cache", "Compiled shader cache", True, False, False, False),
+        ("{STEAM}\\steamapps\\workshop\\content\\{APPID}", "Steam Workshop", "Workshop content", True, False, False, False),
+        ("{STEAM}\\steamapps\\compatdata\\{APPID}", "Steam CompatData", "Compatibility / Proton data", True, False, False, False),
+    ]
+
+    CRACK_EMU_NAMES = [
+        r"Steam\CODEX",
+        r"Steam\RUNE",
+        "OnlineFix",
+        "EMPRESS",
+        "GSE Saves",
+        "SmartSteamEmu",
+        "Goldberg SteamEmu Saves",
+        "ALI213",
+        "STAR",
+    ]
+
+    @staticmethod
+    def env_map() -> dict[str, str]:
+        user = os.environ.get("USERPROFILE", "%USERPROFILE%")
+        return {
+            "{APPDATA}": os.environ.get("APPDATA", "%APPDATA%"),
+            "{LOCAL}": os.environ.get("LOCALAPPDATA", "%LOCALAPPDATA%"),
+            "{LOCALLOW}": os.path.join(user, "AppData", "LocalLow"),
+            "{DOCS}": os.path.join(user, "Documents"),
+            "{PUBLICDOCS}": os.path.join(os.environ.get("PUBLIC", r"C:\Users\Public"), "Documents"),
+            "{TEMP}": os.path.join(os.environ.get("LOCALAPPDATA", "%LOCALAPPDATA%"), "Temp"),
+            "{PROGRAMDATA}": os.environ.get("PROGRAMDATA", "%PROGRAMDATA%"),
+            "{USERPROFILE}": user,
+            "{SAVEDGAMES}": os.path.join(user, "Saved Games"),
+            "{STEAM}": r"C:\Program Files (x86)\Steam",
+        }
+
+    @classmethod
+    def expand_template(cls, template: str) -> str:
+        value = template
+        for key, expanded in cls.env_map().items():
+            value = value.replace(key, expanded)
+        return value
+
+    @classmethod
+    def generate_home_candidates(cls, game: dict[str, Any], steam_id: str = "") -> list[dict[str, Any]]:
+        name_vars = get_name_variations(game.get("name", ""))
+        dev_vars: list[str] = []
+        for dev in game.get("developers", []):
+            dev_vars.extend(get_name_variations(dev))
+        for pub in game.get("publishers", []):
+            dev_vars.extend(get_name_variations(pub))
+        dev_vars = list(dict.fromkeys(v for v in dev_vars if v))
+
+        results: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for template, category, description, uses_appid, uses_game, uses_dev, uses_steamid in cls.HOME_TEMPLATES:
+            base = cls.expand_template(template)
+            game_names = name_vars if uses_game else [None]
+            dev_names = dev_vars if uses_dev else [None]
+            if uses_dev and not dev_names:
+                continue
+            for game_name in game_names:
+                for dev_name in dev_names:
+                    path = base
+                    if uses_appid:
+                        path = path.replace("{APPID}", str(game.get("appid", "")))
+                    if uses_game and game_name is not None:
+                        path = path.replace("{GAME}", game_name)
+                    if uses_dev and dev_name is not None:
+                        path = path.replace("{DEV}", dev_name)
+                    if uses_steamid:
+                        path = path.replace("{STEAMID}", steam_id.strip() if steam_id.strip() else "*")
+                    norm = os.path.normcase(path)
+                    if norm in seen:
+                        continue
+                    seen.add(norm)
+                    results.append({
+                        "path": path,
+                        "category": category,
+                        "description": description,
+                        "risk": "caution" if category.startswith("Steam ") else "safe",
+                    })
+        return results
+
+    @staticmethod
+    def resolve_candidate(candidate: dict[str, Any]) -> list[dict[str, Any]]:
+        raw_path = os.path.expandvars(candidate["path"])
+        try:
+            matches = glob.glob(raw_path) if "*" in raw_path else ([raw_path] if os.path.exists(raw_path) else [])
+        except Exception:
+            matches = []
+        results: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for match in matches:
+            if not os.path.exists(match):
+                continue
+            norm = os.path.normcase(os.path.normpath(match))
+            if norm in seen:
+                continue
+            seen.add(norm)
+            results.append({
+                "path": match,
+                "category": candidate["category"],
+                "description": candidate["description"],
+                "risk": candidate.get("risk", "safe"),
+                "size": path_size(match),
+                "is_dir": os.path.isdir(match),
+            })
+        return results
+
+    @staticmethod
+    def collapse_selected_paths(paths: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for path in paths:
+            norm = os.path.normcase(os.path.normpath(path))
+            if norm in seen:
+                continue
+            seen.add(norm)
+            normalized.append(os.path.normpath(path))
+        normalized.sort(key=lambda value: len(os.path.normpath(value)))
+        kept: list[str] = []
+        kept_norm: list[str] = []
+        for path in normalized:
+            norm = os.path.normcase(os.path.normpath(path))
+            if any(norm == parent or norm.startswith(parent + os.sep) for parent in kept_norm):
+                continue
+            kept.append(path)
+            kept_norm.append(norm)
+        return kept
+
+    @staticmethod
+    def detect_steam_install_path() -> str | None:
+        if os.name == "nt":
+            try:
+                import winreg  # type: ignore
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam")
+                path, _ = winreg.QueryValueEx(key, "InstallPath")
+                winreg.CloseKey(key)
+                if os.path.isdir(path):
+                    return path
+            except Exception:
+                pass
+            try:
+                import winreg  # type: ignore
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam")
+                path, _ = winreg.QueryValueEx(key, "InstallPath")
+                winreg.CloseKey(key)
+                if os.path.isdir(path):
+                    return path
+            except Exception:
+                pass
+        for candidate in [
+            r"C:\Program Files (x86)\Steam",
+            r"C:\Program Files\Steam",
+            r"D:\Steam",
+            r"D:\Games\Steam",
+        ]:
+            if os.path.isdir(candidate):
+                return candidate
+        return None
+
+    @classmethod
+    def build_library_index(cls) -> dict[str, list[dict[str, Any]]]:
+        index: dict[str, list[dict[str, Any]]] = {}
+
+        def add_path(appid: str, path: str, category: str, description: str, risk: str = "safe") -> None:
+            if not appid or not appid.isdigit() or not os.path.exists(path):
+                return
+            entry = {
+                "path": path,
+                "category": category,
+                "description": description,
+                "risk": risk,
+                "size": path_size(path),
+                "is_dir": os.path.isdir(path),
+            }
+            bucket = index.setdefault(appid, [])
+            norm = os.path.normcase(os.path.normpath(path))
+            if any(os.path.normcase(os.path.normpath(item["path"])) == norm for item in bucket):
+                return
+            bucket.append(entry)
+
+        all_bases: list[str] = []
+        for env_key in ["APPDATA", "LOCALAPPDATA"]:
+            value = os.environ.get(env_key, "")
+            if value:
+                all_bases.append(value)
+        userprofile = os.environ.get("USERPROFILE", "")
+        if userprofile:
+            all_bases.append(os.path.join(userprofile, "AppData", "LocalLow"))
+            all_bases.append(os.path.join(userprofile, "Documents"))
+        public_docs = os.path.join(os.environ.get("PUBLIC", r"C:\Users\Public"), "Documents")
+        if public_docs:
+            all_bases.append(public_docs)
+        localappdata = os.environ.get("LOCALAPPDATA", "")
+        if localappdata:
+            all_bases.append(os.path.join(localappdata, "Temp"))
+        programdata = os.environ.get("PROGRAMDATA", "")
+        if programdata:
+            all_bases.append(programdata)
+
+        crack_meta = {
+            r"Steam\CODEX": ("Crack Leftovers (CODEX)", "CODEX save/config data"),
+            r"Steam\RUNE": ("Crack Leftovers (RUNE)", "RUNE emulator data"),
+            "OnlineFix": ("Crack Leftovers (OnlineFix)", "OnlineFix data"),
+            "EMPRESS": ("Crack Leftovers (EMPRESS)", "EMPRESS data"),
+            "GSE Saves": ("Crack Leftovers (GSE)", "Goldberg Steam Emu saves"),
+            "SmartSteamEmu": ("Crack Leftovers (SSE)", "SmartSteamEmu data"),
+            "Goldberg SteamEmu Saves": ("Crack Leftovers (Goldberg)", "Goldberg emulator saves"),
+            "ALI213": ("Crack Leftovers (ALI213)", "ALI213 crack data"),
+            "STAR": ("Crack Leftovers (STAR)", "STAR app cache by AppID"),
+        }
+
+        for base_path in all_bases:
+            if not os.path.isdir(base_path):
+                continue
+            for emu in cls.CRACK_EMU_NAMES:
+                root = os.path.join(base_path, emu)
+                if not os.path.isdir(root):
+                    continue
+                category, description = crack_meta.get(emu, ("Crack Leftovers", "Crack leftover data"))
+                try:
+                    for entry in os.listdir(root):
+                        full = os.path.join(root, entry)
+                        if entry.isdigit() and os.path.exists(full):
+                            add_path(entry, full, category, description)
+                        elif os.path.isdir(full):
+                            for sub in os.listdir(full):
+                                sub_full = os.path.join(full, sub)
+                                if sub.isdigit() and os.path.exists(sub_full):
+                                    add_path(sub, sub_full, category, description)
+                except Exception:
+                    continue
+
+        steam_dir = cls.detect_steam_install_path() or cls.expand_template("{STEAM}")
+        steam_scan_dirs = [
+            (os.path.join(steam_dir, "steamapps", "shadercache"), "Steam Shader Cache", "Compiled shader cache", "safe"),
+            (os.path.join(steam_dir, "steamapps", "workshop", "content"), "Steam Workshop", "Workshop content", "safe"),
+            (os.path.join(steam_dir, "steamapps", "compatdata"), "Steam CompatData", "Compatibility / Proton data", "safe"),
+            (os.path.join(steam_dir, "userdata"), "Steam Userdata", "Steam cloud saves / configs", "caution"),
+        ]
+
+        for scan_dir, category, description, risk in steam_scan_dirs:
+            if not os.path.isdir(scan_dir):
+                continue
+            try:
+                if os.path.basename(scan_dir).lower() == "userdata":
+                    for steam_user in os.listdir(scan_dir):
+                        user_dir = os.path.join(scan_dir, steam_user)
+                        if not os.path.isdir(user_dir):
+                            continue
+                        for appid in os.listdir(user_dir):
+                            app_full = os.path.join(user_dir, appid)
+                            if appid.isdigit() and os.path.exists(app_full):
+                                add_path(appid, app_full, category, description, risk)
+                else:
+                    for appid in os.listdir(scan_dir):
+                        app_full = os.path.join(scan_dir, appid)
+                        if appid.isdigit() and os.path.exists(app_full):
+                            add_path(appid, app_full, category, description, risk)
+            except Exception:
+                continue
+
+        return index
