@@ -9,12 +9,14 @@ from .file_ops import open_path as open_path_impl
 from .scanner import ScanEngine
 from .steam_api import SteamAPI
 from .storage import StateStore
+from .updater import UpdateManager
 
 
 class Backend:
     def __init__(self) -> None:
         self.state = StateStore()
         self.steam = SteamAPI()
+        self.updater = UpdateManager()
 
     def _save(self) -> None:
         self.state.save()
@@ -53,6 +55,24 @@ class Backend:
 
     def search_suggestions(self, query: str) -> list[dict[str, Any]]:
         return self.steam.search_suggestions(query)
+
+    def get_settings_info(self) -> dict[str, Any]:
+        return self.updater.get_settings_payload()
+
+    def check_for_updates(self) -> dict[str, Any]:
+        return self.updater.check_for_updates()
+
+    def open_releases_page(self) -> dict[str, Any]:
+        return self.updater.open_releases_page()
+
+    def download_update_installer(self, url: str) -> dict[str, Any]:
+        return self.updater.download_installer_update(url)
+
+    def launch_update_installer(self, path: str) -> dict[str, Any]:
+        return self.updater.launch_installer(path)
+
+    def download_portable_update(self, url: str) -> dict[str, Any]:
+        return self.updater.download_portable_package(url)
 
     def home_search(self, query: str) -> dict[str, Any]:
         game = self.steam.search_game(query)

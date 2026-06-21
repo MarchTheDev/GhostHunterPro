@@ -743,6 +743,78 @@
       line-height: 1.5;
     }
 
+    .settings-shell {
+      max-width: 980px;
+      margin: 24px auto 0;
+      display: grid;
+      gap: 18px;
+    }
+
+    .settings-card {
+      padding: 18px;
+    }
+
+    .settings-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .settings-sub {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .settings-item {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+    }
+
+    .settings-label {
+      color: #93a0b7;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .settings-value {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .settings-note {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
     .toolbar {
       display: flex;
       gap: 14px;
@@ -1256,21 +1328,23 @@
         <div class="brand-icon">👻</div>
         <div>
           <div class="brand-title">Ghost Hunter Pro</div>
-          <div class="brand-sub">v2.3.2 • <span class="desktop">Desktop Mode</span></div>
+          <div class="brand-sub"><span id="app-version-label">v2.3.4</span> • <span class="desktop">Desktop Mode</span></div>
         </div>
       </div>
       <div class="tabs">
         <button class="tab home-nav active" data-action="switch-tab" data-tab="home"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"></path><path d="M7 10.5V19h10v-8.5"></path><path d="M10 19v-4.5h4V19"></path></svg></span>Home</button>
+        <button class="tab" data-action="switch-tab" data-tab="settings"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"></path><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8l-.3.3a2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-2 2h-.5a2 2 0 0 1-2-2v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8 0l-.3-.3a2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1-2-2v-.5a2 2 0 0 1 2-2h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 0 1 0-2.8l.3-.3a2 2 0 0 1 2.8 0l.1.1a1 1 0 0 0 1.1.2h0a1 1 0 0 0 .6-.9V4a2 2 0 0 1 2-2h.5a2 2 0 0 1 2 2v.2a1 1 0 0 0 .6.9h0a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0l.3.3a2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1v0a1 1 0 0 0 .9.6H20a2 2 0 0 1 2 2v.5a2 2 0 0 1-2 2h-.2a1 1 0 0 0-.9.6z"></path></svg></span>Settings</button>
       </div>
     </header>
 
     <div class="view-wrap">
       <section id="view-home" class="view active"></section>
       <section id="view-library" class="view"></section>
+      <section id="view-settings" class="view"></section>
     </div>
 
     <footer class="footer">
-      Ghost Hunter Pro v2.3.2 • Not affiliated with Valve or Steam<br />
+      <span id="app-footer-version">Ghost Hunter Pro v2.3.4</span> • Not affiliated with Valve or Steam<br />
       Paths are generated based on common known locations. Always verify before deleting.
     </footer>
   </div>
@@ -1295,6 +1369,8 @@
       libraryFilter: 'active',
       selectedLibraryAppIds: [],
       libraryShowScrollTop: false,
+      settingsInfo: null,
+      updateInfo: null,
       modalGameId: null,
       confirmDialog: null,
     };
@@ -1304,6 +1380,7 @@
 
     const $home = document.getElementById('view-home');
     const $library = document.getElementById('view-library');
+    const $settings = document.getElementById('view-settings');
     const $modal = document.getElementById('modal-overlay');
     const $confirm = document.getElementById('confirm-overlay');
     const $toast = document.getElementById('toast');
@@ -1477,6 +1554,47 @@
       }
     }
 
+    async function downloadInstallerUpdate() {
+      if (!state.updateInfo || !state.updateInfo.installer_url) {
+        toast('No installer update available');
+        return;
+      }
+      const ok = await showConfirm({
+        title: 'Download installer update',
+        message: 'The installer update will be downloaded and then launched. The installer may close the app while updating. Continue?',
+        confirmText: 'Download & Launch',
+        cancelText: 'Cancel',
+      });
+      if (!ok) return;
+      const download = await apiCall('download_update_installer', state.updateInfo.installer_url);
+      if (!download.ok) {
+        toast(download.error || 'Download failed');
+        return;
+      }
+      const launch = await apiCall('launch_update_installer', download.path);
+      if (!launch.ok) {
+        toast(launch.error || 'Could not launch installer');
+        return;
+      }
+      toast('Installer launched');
+    }
+
+    async function downloadPortableUpdate() {
+      if (!state.updateInfo || !state.updateInfo.portable_url) {
+        toast('No portable update available');
+        return;
+      }
+      const download = await apiCall('download_portable_update', state.updateInfo.portable_url);
+      if (!download.ok) {
+        toast(download.error || 'Download failed');
+        return;
+      }
+      toast('Portable package downloaded');
+      if (download.folder) {
+        await openPath(download.folder);
+      }
+    }
+
     async function updateSuggestions(query) {
       const clean = (query || '').trim();
       if (clean.length < 2) {
@@ -1509,6 +1627,33 @@
       } catch {
         state.homeHistory = [];
       }
+    }
+
+    async function loadSettingsInfo() {
+      try {
+        state.settingsInfo = await apiCall('get_settings_info');
+      } catch {
+        state.settingsInfo = null;
+      }
+      applyVersionLabels();
+    }
+
+    function applyVersionLabels() {
+      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '2.3';
+      const top = document.getElementById('app-version-label');
+      const footer = document.getElementById('app-footer-version');
+      if (top) top.textContent = `v${version}`;
+      if (footer) footer.textContent = `Ghost Hunter Pro v${version}`;
+    }
+
+    async function refreshUpdateInfo() {
+      try {
+        state.updateInfo = await apiCall('check_for_updates');
+      } catch (error) {
+        state.updateInfo = { ok: false, configured: false, error: error.message || 'Update check failed.' };
+      }
+      renderSettings();
+      renderTabs();
     }
 
     function clearHomeView() {
@@ -1728,6 +1873,7 @@
       });
       document.getElementById('view-home').classList.toggle('active', state.activeTab === 'home');
       document.getElementById('view-library').classList.toggle('active', state.activeTab === 'library');
+      document.getElementById('view-settings').classList.toggle('active', state.activeTab === 'settings');
     }
 
     function renderConfirm() {
@@ -1845,9 +1991,78 @@
       `;
     }
 
+    function renderSettings() {
+      const info = state.settingsInfo || {};
+      const update = state.updateInfo;
+      const configured = !!info.configured;
+      let updateBlock = `
+        <div class="settings-note">Settings is now the central place for updates and future maintenance options.</div>
+      `;
+
+      if (update) {
+        if (update.ok && update.update_available) {
+          updateBlock = `
+            <div class="settings-note">A newer version is available.\nCurrent: ${escapeHtml(update.current_version || '')}\nLatest: ${escapeHtml(update.latest_version || '')}</div>
+            <div class="settings-actions">
+              <button class="btn primary" data-action="settings-download-installer" ${update.installer_url ? '' : 'disabled'}>Download Installer Update</button>
+              <button class="btn" data-action="settings-download-portable" ${update.portable_url ? '' : 'disabled'}>Download Portable Package</button>
+              <button class="btn" data-action="settings-open-releases" ${configured ? '' : 'disabled'}>Open Release Page</button>
+            </div>
+            ${update.release_notes ? `<div class="settings-note">${escapeHtml(update.release_notes)}</div>` : ''}
+          `;
+        } else if (update.ok) {
+          updateBlock = `<div class="settings-note">You are up to date. Current version: ${escapeHtml(update.current_version || info.current_version || '')}</div>`;
+        } else {
+          updateBlock = `<div class="settings-note">${escapeHtml(update.error || 'Update check failed.')}</div>`;
+        }
+      }
+
+      $settings.innerHTML = `
+        <div class="settings-shell">
+          <div class="card settings-card">
+            <div class="settings-title">Settings & Updates</div>
+            <div class="settings-sub">Manage release builds, update checks, and future maintenance settings for Ghost Hunter Pro.</div>
+            <div class="settings-grid">
+              <div class="settings-item">
+                <div class="settings-label">Current Version</div>
+                <div class="settings-value">${escapeHtml(info.current_version || 'Unknown')}</div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">Executable Name</div>
+                <div class="settings-value">${escapeHtml(info.exe_name || 'GhostHunterPro.exe')}</div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">Installer Asset</div>
+                <div class="settings-value">${escapeHtml(info.installer_name_example || 'Not configured')}</div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">Portable Asset</div>
+                <div class="settings-value">${escapeHtml(info.portable_name_example || 'Not configured')}</div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">Downloads Folder</div>
+                <div class="settings-value">${escapeHtml(info.downloads_dir || '')}</div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">GitHub Repo</div>
+                <div class="settings-value">${escapeHtml(info.repo_url || 'Not configured yet')}</div>
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn primary" data-action="settings-check-updates">Check for Updates</button>
+              <button class="btn" data-action="settings-open-releases" ${configured ? '' : 'disabled'}>Open Releases Page</button>
+            </div>
+            ${configured ? '' : `<div class="settings-note">Updater is prepared but not configured yet. Set UPDATE_REPO_OWNER and UPDATE_REPO_NAME inside ghosthunter_app/config.py, then publish releases from GitHub Actions.</div>`}
+            ${updateBlock}
+          </div>
+        </div>
+      `;
+    }
+
     function renderAll() {
       renderHome();
       renderLibrary();
+      renderSettings();
       renderTabs();
       renderModal();
       renderConfirm();
@@ -1990,6 +2205,9 @@
           state.activeTab = actionEl.dataset.tab || 'home';
           renderTabs();
           updateLibraryScrollButton();
+          if (state.activeTab === 'settings') {
+            await refreshUpdateInfo();
+          }
           break;
         case 'library-scan':
         case 'library-rescan':
@@ -2046,6 +2264,21 @@
           await apiCall('clear_history');
           await loadHistory();
           renderHome();
+          break;
+        case 'settings-check-updates':
+          await refreshUpdateInfo();
+          break;
+        case 'settings-open-releases':
+          if (state.settingsInfo && state.settingsInfo.repo_url) {
+            const result = await apiCall('open_releases_page');
+            if (!result.ok) toast(result.error || 'Could not open releases page');
+          }
+          break;
+        case 'settings-download-installer':
+          await downloadInstallerUpdate();
+          break;
+        case 'settings-download-portable':
+          await downloadPortableUpdate();
           break;
         case 'toggle-archive':
           await toggleArchive(actionEl.dataset.appid, actionEl.dataset.archived === '1');
@@ -2112,6 +2345,7 @@
         libraryView.addEventListener('scroll', updateLibraryScrollButton);
       }
       await loadHistory();
+      await loadSettingsInfo();
       state.libraryLoading = true;
       renderAll();
       await refreshLibrary();
