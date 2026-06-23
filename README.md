@@ -37,7 +37,7 @@ There you can download:
 - The app may detect both cracked leftovers and legitimate Steam-owned traces depending on where files are stored.
 
 ## License
-This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE.txt) file for details.
 
 ## Made by
 TheMarch88
