@@ -35,3 +35,6 @@ There you can download:
 - Always review paths before deleting anything.
 - Some actions may work better when run with Administrator permissions.
 - The app may detect both cracked leftovers and legitimate Steam-owned traces depending on where files are stored.
+
+## Made by
+TheMarch88
