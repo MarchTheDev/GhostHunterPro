@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 from .utils import get_name_variations, normalize_name, path_size
@@ -245,6 +246,261 @@ class ScanEngine:
             return False
         return cand == game or cand in game or game in cand
 
+    @staticmethod
+    def _dedupe_existing_paths(paths: list[str]) -> list[str]:
+        seen: set[str] = set()
+        result: list[str] = []
+        for raw in paths:
+            if not raw:
+                continue
+            norm = os.path.normcase(os.path.normpath(raw))
+            if norm in seen or not os.path.exists(raw):
+                continue
+            seen.add(norm)
+            result.append(raw)
+        return result
+
+    @classmethod
+    def epic_manifest_dirs(cls) -> list[str]:
+        programdata = os.environ.get("PROGRAMDATA", r"C:\ProgramData")
+        return cls._dedupe_existing_paths([
+            os.path.join(programdata, "Epic", "EpicGamesLauncher", "Data", "Manifests"),
+        ])
+
+    @classmethod
+    def epic_launcher_installed_files(cls) -> list[str]:
+        programdata = os.environ.get("PROGRAMDATA", r"C:\ProgramData")
+        candidates = [
+            os.path.join(programdata, "Epic", "UnrealEngineLauncher", "LauncherInstalled.dat"),
+            os.path.join(programdata, "Epic", "EpicGamesLauncher", "Data", "LauncherInstalled.dat"),
+        ]
+        return cls._dedupe_existing_paths(candidates)
+
+    @classmethod
+    def epic_installed_entries(cls) -> list[dict[str, str]]:
+        entries: list[dict[str, str]] = []
+        seen: set[str] = set()
+
+        def add_entry(name: str, install_location: str) -> None:
+            install_location = str(install_location or '').strip()
+            if not install_location or not os.path.exists(install_location):
+                return
+            norm = os.path.normcase(os.path.normpath(install_location))
+            if norm in seen:
+                return
+            seen.add(norm)
+            display = str(name or '').strip() or Path(install_location).name
+            if not display:
+                return
+            entries.append({"name": display, "path": install_location})
+
+        for manifest_dir in cls.epic_manifest_dirs():
+            try:
+                for file_name in os.listdir(manifest_dir):
+                    if not file_name.lower().endswith('.item'):
+                        continue
+                    full = os.path.join(manifest_dir, file_name)
+                    try:
+                        data = json.loads(open(full, 'r', encoding='utf-8', errors='ignore').read())
+                    except Exception:
+                        continue
+                    display = str(data.get('DisplayName') or data.get('DisplayNameClean') or data.get('AppName') or '')
+                    install_location = str(data.get('InstallLocation') or '')
+                    add_entry(display, install_location)
+            except Exception:
+                continue
+
+        for launcher_file in cls.epic_launcher_installed_files():
+            try:
+                data = json.loads(open(launcher_file, 'r', encoding='utf-8', errors='ignore').read())
+            except Exception:
+                continue
+            for item in data.get('InstallationList') or []:
+                namespace = str(item.get('NamespaceId') or '').lower()
+                display = str(item.get('DisplayName') or item.get('AppName') or '')
+                if namespace in {'ue', 'uefn'}:
+                    continue
+                if display.lower().startswith('ue_') or 'unreal engine' in display.lower():
+                    continue
+                add_entry(display, str(item.get('InstallLocation') or ''))
+
+        return entries
+
+    @classmethod
+    def gog_library_roots(cls) -> list[str]:
+        candidates = [
+            r"C:\GOG Games",
+            r"D:\GOG Games",
+            r"E:\GOG Games",
+        ]
+        for env_name in ('PROGRAMFILES', 'PROGRAMFILES(X86)'):
+            base = os.environ.get(env_name)
+            if base:
+                candidates.append(os.path.join(base, 'GOG Galaxy', 'Games'))
+        return cls._dedupe_existing_paths(candidates)
+
+    @classmethod
+    def gog_registry_entries(cls) -> list[dict[str, str]]:
+        entries: list[dict[str, str]] = []
+        seen: set[str] = set()
+        if os.name != 'nt':
+            return entries
+        try:
+            import winreg  # type: ignore
+        except Exception:
+            return entries
+
+        def add_entry(name: str, install_location: str) -> None:
+            install_location = str(install_location or '').strip()
+            if not install_location or not os.path.exists(install_location):
+                return
+            norm = os.path.normcase(os.path.normpath(install_location))
+            if norm in seen:
+                return
+            seen.add(norm)
+            display = str(name or '').strip() or Path(install_location).name
+            if not display:
+                return
+            entries.append({"name": display, "path": install_location})
+
+        game_roots = [
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\GOG.com\Games"),
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\GOG.com\Games"),
+            (winreg.HKEY_CURRENT_USER, r"SOFTWARE\GOG.com\Games"),
+        ]
+        for hive, key_path in game_roots:
+            try:
+                root = winreg.OpenKey(hive, key_path)
+            except Exception:
+                continue
+            try:
+                index = 0
+                while True:
+                    try:
+                        sub_name = winreg.EnumKey(root, index)
+                    except OSError:
+                        break
+                    index += 1
+                    try:
+                        subkey = winreg.OpenKey(root, sub_name)
+                    except Exception:
+                        continue
+                    try:
+                        install_location = ''
+                        for value_name in ('path', 'PATH', 'workingDir'):
+                            try:
+                                install_location, _ = winreg.QueryValueEx(subkey, value_name)
+                                if install_location:
+                                    break
+                            except Exception:
+                                continue
+                        display = ''
+                        for value_name in ('gameName', 'gamename', 'name'):
+                            try:
+                                display, _ = winreg.QueryValueEx(subkey, value_name)
+                                if display:
+                                    break
+                            except Exception:
+                                continue
+                        add_entry(str(display or ''), str(install_location or ''))
+                    finally:
+                        try:
+                            winreg.CloseKey(subkey)
+                        except Exception:
+                            pass
+            finally:
+                try:
+                    winreg.CloseKey(root)
+                except Exception:
+                    pass
+
+        uninstall_roots = [
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        ]
+        for hive, key_path in uninstall_roots:
+            try:
+                root = winreg.OpenKey(hive, key_path)
+            except Exception:
+                continue
+            try:
+                index = 0
+                while True:
+                    try:
+                        sub_name = winreg.EnumKey(root, index)
+                    except OSError:
+                        break
+                    index += 1
+                    try:
+                        subkey = winreg.OpenKey(root, sub_name)
+                    except Exception:
+                        continue
+                    try:
+                        publisher = ''
+                        try:
+                            publisher, _ = winreg.QueryValueEx(subkey, 'Publisher')
+                        except Exception:
+                            pass
+                        publisher_text = str(publisher or '')
+                        if 'gog' not in publisher_text.lower() and 'gog' not in sub_name.lower():
+                            continue
+                        display = ''
+                        install_location = ''
+                        try:
+                            display, _ = winreg.QueryValueEx(subkey, 'DisplayName')
+                        except Exception:
+                            pass
+                        try:
+                            install_location, _ = winreg.QueryValueEx(subkey, 'InstallLocation')
+                        except Exception:
+                            pass
+                        add_entry(str(display or ''), str(install_location or ''))
+                    finally:
+                        try:
+                            winreg.CloseKey(subkey)
+                        except Exception:
+                            pass
+            finally:
+                try:
+                    winreg.CloseKey(root)
+                except Exception:
+                    pass
+
+        return entries
+
+    @classmethod
+    def gog_installed_entries(cls) -> list[dict[str, str]]:
+        entries: list[dict[str, str]] = []
+        seen: set[str] = set()
+
+        def add_entry(name: str, install_location: str) -> None:
+            install_location = str(install_location or '').strip()
+            if not install_location or not os.path.exists(install_location):
+                return
+            norm = os.path.normcase(os.path.normpath(install_location))
+            if norm in seen:
+                return
+            seen.add(norm)
+            display = str(name or '').strip() or Path(install_location).name
+            if not display:
+                return
+            entries.append({"name": display, "path": install_location})
+
+        for entry in cls.gog_registry_entries():
+            add_entry(entry.get('name', ''), entry.get('path', ''))
+
+        for root in cls.gog_library_roots():
+            try:
+                for name in os.listdir(root):
+                    full = os.path.join(root, name)
+                    if os.path.isdir(full):
+                        add_entry(name, full)
+            except Exception:
+                continue
+
+        return entries
+
     @classmethod
     def detect_installed_sources(cls, appid: str, game_name: str) -> list[str]:
         sources: list[str] = []
@@ -255,49 +511,11 @@ class ScanEngine:
                 sources.append("Steam")
                 break
 
-        epic_manifests = os.path.join(
-            os.environ.get("PROGRAMDATA", r"C:\ProgramData"),
-            "Epic",
-            "EpicGamesLauncher",
-            "Data",
-            "Manifests",
-        )
-        if os.path.isdir(epic_manifests):
-            try:
-                for name in os.listdir(epic_manifests):
-                    if not name.lower().endswith('.item'):
-                        continue
-                    full = os.path.join(epic_manifests, name)
-                    try:
-                        data = json.loads(open(full, 'r', encoding='utf-8', errors='ignore').read())
-                    except Exception:
-                        continue
-                    display = str(data.get('DisplayName') or '')
-                    install_location = str(data.get('InstallLocation') or '')
-                    if install_location and os.path.exists(install_location) and cls._name_matches(display, game_name):
-                        sources.append("Epic")
-                        break
-            except Exception:
-                pass
+        if any(cls._name_matches(entry.get('name', ''), game_name) for entry in cls.epic_installed_entries()):
+            sources.append("Epic")
 
-        gog_roots = [
-            r"C:\GOG Games",
-            r"D:\GOG Games",
-            r"E:\GOG Games",
-        ]
-        for root in gog_roots:
-            if not os.path.isdir(root):
-                continue
-            try:
-                for name in os.listdir(root):
-                    full = os.path.join(root, name)
-                    if os.path.isdir(full) and cls._name_matches(name, game_name):
-                        sources.append("GOG")
-                        raise StopIteration
-            except StopIteration:
-                break
-            except Exception:
-                continue
+        if any(cls._name_matches(entry.get('name', ''), game_name) for entry in cls.gog_installed_entries()):
+            sources.append("GOG")
 
         seen: set[str] = set()
         ordered: list[str] = []
@@ -362,63 +580,33 @@ class ScanEngine:
                         pass
                     final_name = name or install_dir_name or f"Unknown Game ({appid})"
                     normalized = steam_api.seed_cache_entry(appid, final_name)
-                    add_game(appid, normalized["name"], "Steam", **normalized)
+                    add_game(appid, normalized["name"], "Steam", **{key: value for key, value in normalized.items() if key not in {"appid", "name"}})
             except Exception:
                 continue
 
-        # Epic manifests
-        epic_manifests = os.path.join(
-            os.environ.get("PROGRAMDATA", r"C:\ProgramData"),
-            "Epic",
-            "EpicGamesLauncher",
-            "Data",
-            "Manifests",
-        )
-        if os.path.isdir(epic_manifests):
-            try:
-                for name in os.listdir(epic_manifests):
-                    if not name.lower().endswith('.item'):
-                        continue
-                    full = os.path.join(epic_manifests, name)
-                    try:
-                        data = json.loads(open(full, 'r', encoding='utf-8', errors='ignore').read())
-                    except Exception:
-                        continue
-                    display = str(data.get('DisplayName') or '')
-                    install_location = str(data.get('InstallLocation') or '')
-                    if not display or not install_location or not os.path.exists(install_location):
-                        continue
-                    resolved = steam_api.resolve_candidate_name(display)
-                    if resolved:
-                        add_game(str(resolved['appid']), resolved['name'], "Epic", **resolved)
-                    else:
-                        local_id = f"local:{normalize_name(display)}"
-                        add_game(local_id, display, "Epic", local_only=True)
-            except Exception:
-                pass
+        # Epic installs from launcher manifests / installation lists
+        for entry in cls.epic_installed_entries():
+            display = str(entry.get('name') or '').strip()
+            if not display:
+                continue
+            resolved = steam_api.resolve_candidate_name(display)
+            if resolved:
+                add_game(str(resolved['appid']), resolved['name'], "Epic", **{key: value for key, value in resolved.items() if key not in {"appid", "name"}})
+            else:
+                local_id = f"local:{normalize_name(display)}"
+                add_game(local_id, display, "Epic", local_only=True)
 
-        # GOG folders
-        gog_roots = [
-            r"C:\GOG Games",
-            r"D:\GOG Games",
-            r"E:\GOG Games",
-        ]
-        for root in gog_roots:
-            if not os.path.isdir(root):
+        # GOG installs from registry and common library folders
+        for entry in cls.gog_installed_entries():
+            display = str(entry.get('name') or '').strip()
+            if not display:
                 continue
-            try:
-                for name in os.listdir(root):
-                    full = os.path.join(root, name)
-                    if not os.path.isdir(full):
-                        continue
-                    resolved = steam_api.resolve_candidate_name(name)
-                    if resolved:
-                        add_game(str(resolved['appid']), resolved['name'], "GOG", **resolved)
-                    else:
-                        local_id = f"local:{normalize_name(name)}"
-                        add_game(local_id, name, "GOG", local_only=True)
-            except Exception:
-                continue
+            resolved = steam_api.resolve_candidate_name(display)
+            if resolved:
+                add_game(str(resolved['appid']), resolved['name'], "GOG", **{key: value for key, value in resolved.items() if key not in {"appid", "name"}})
+            else:
+                local_id = f"local:{normalize_name(display)}"
+                add_game(local_id, display, "GOG", local_only=True)
 
         return catalog
 

@@ -14,6 +14,19 @@ from .utils import normalize_name
 
 
 class Backend:
+    THEME_OPTIONS = [
+        {"id": "neon", "label": "Neon", "description": "Classic cyan and purple look."},
+        {"id": "midnight", "label": "Midnight", "description": "Cool blue and steel accents."},
+        {"id": "ember", "label": "Ember", "description": "Warm orange and crimson accents."},
+        {"id": "emerald", "label": "Emerald", "description": "Green highlights with a darker base."},
+    ]
+
+    FONT_OPTIONS = [
+        {"id": "inter", "label": "Inter", "description": "Modern UI default with clean spacing."},
+        {"id": "roboto-slab", "label": "Roboto Slab", "description": "A sharper slab-serif look for the whole app."},
+        {"id": "atkinson-hyperlegible", "label": "Atkinson Hyperlegible", "description": "Built for readability with clearer character shapes."},
+    ]
+
     def __init__(self) -> None:
         self.state = StateStore()
         self.steam = SteamAPI()
@@ -121,19 +134,23 @@ class Backend:
         return suggestions[:6]
 
     def set_theme(self, theme_name: str) -> dict[str, Any]:
-        self.state.set_theme(theme_name)
+        allowed = {option["id"] for option in self.THEME_OPTIONS}
+        self.state.set_theme(theme_name if theme_name in allowed else "neon")
         self._save()
         return {"ok": True, "theme": self.state.theme()}
+
+    def set_font(self, font_name: str) -> dict[str, Any]:
+        allowed = {option["id"] for option in self.FONT_OPTIONS}
+        self.state.set_font(font_name if font_name in allowed else "inter")
+        self._save()
+        return {"ok": True, "font": self.state.font()}
 
     def get_settings_info(self) -> dict[str, Any]:
         payload = self.updater.get_settings_payload()
         payload["theme"] = self.state.theme()
-        payload["theme_options"] = [
-            {"id": "neon", "label": "Neon", "description": "Classic cyan and purple look."},
-            {"id": "midnight", "label": "Midnight", "description": "Cool blue and steel accents."},
-            {"id": "ember", "label": "Ember", "description": "Warm orange and crimson accents."},
-            {"id": "emerald", "label": "Emerald", "description": "Green highlights with a darker base."},
-        ]
+        payload["theme_options"] = self.THEME_OPTIONS
+        payload["font"] = self.state.font()
+        payload["font_options"] = self.FONT_OPTIONS
         return payload
 
     def check_for_updates(self) -> dict[str, Any]:
@@ -150,6 +167,11 @@ class Backend:
 
     def download_portable_update(self, url: str) -> dict[str, Any]:
         return self.updater.download_portable_package(url)
+
+    def rescan_library(self) -> dict[str, Any]:
+        self._installed_catalog = ScanEngine.discover_installed_games(self.steam)
+        self._save()
+        return self.scan_library(use_cached_installed=True)
 
     def home_search(self, query: str) -> dict[str, Any]:
         catalog = self._ensure_installed_catalog()
@@ -243,32 +265,28 @@ class Backend:
             "total_size": sum(item.get("size", 0) for item in resolved),
         }
 
-    def scan_library(self) -> dict[str, Any]:
+    def scan_library(self, use_cached_installed: bool = False) -> dict[str, Any]:
         hidden_set = set(self.state.archived_appids())
         leftover_index = ScanEngine.build_library_index()
-        installed_catalog = self._ensure_installed_catalog()
+        installed_catalog = self._installed_catalog if use_cached_installed and self._installed_catalog is not None else self._ensure_installed_catalog()
         all_appids = sorted(set(leftover_index.keys()) | set(installed_catalog.keys()))
+        details_map = self.steam.get_many_app_details([appid for appid in all_appids if str(appid).isdigit()], timeout=3)
         items: list[dict[str, Any]] = []
 
         for appid in all_appids:
             paths = list(leftover_index.get(appid, []))
             installed_info = installed_catalog.get(appid, {"sources": [], "name": f"Unknown Game ({appid})"})
-            meta = self.steam.get_app_details(appid) or {
-                "name": installed_info.get("name", f"Unknown Game ({appid})"),
-                "appid": appid,
-                "developers": [],
-                "publishers": [],
-                "header_image": "",
-                "short_description": "Not found on Steam Store.",
-            }
+            fallback_name = installed_info.get("name", f"Unknown Game ({appid})")
+            meta = details_map.get(str(appid)) or self.steam.cached_library_details(str(appid), fallback_name=fallback_name)
+            header_image = meta.get("header_image", "") or installed_info.get("header_image", "")
             paths.sort(key=lambda item: (item["category"], item["path"].lower()))
             installed_sources = installed_info.get("sources", []) or ScanEngine.detect_installed_sources(appid, meta["name"])
             items.append({
                 "appid": appid,
-                "name": meta["name"],
+                "name": meta.get("name", fallback_name),
                 "developers": meta.get("developers", []),
                 "publishers": meta.get("publishers", []),
-                "header_image": meta.get("header_image", ""),
+                "header_image": header_image,
                 "short_description": meta.get("short_description", ""),
                 "paths": paths,
                 "path_count": len(paths),

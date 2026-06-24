@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ghost Hunter Pro</title>
   <style>
+    @font-face {
+      font-family: 'GH Roboto Slab';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('./fonts/roboto-slab-regular.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'GH Roboto Slab';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url('./fonts/roboto-slab-bold.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'GH Atkinson Hyperlegible';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('./fonts/atkinson-hyperlegible-regular.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'GH Atkinson Hyperlegible';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url('./fonts/atkinson-hyperlegible-bold.ttf') format('truetype');
+    }
+
     :root {
       --bg: #070b14;
       --panel: rgba(18, 25, 42, 0.82);
@@ -27,14 +59,22 @@
       --red: #ff5b57;
       --shadow: 0 20px 60px rgba(0,0,0,.38);
       --radius: 18px;
+      --app-font-stack: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; }
+
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
     body {
       margin: 0;
       color: var(--text);
-      font-family: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
+      font-family: var(--app-font-stack);
       background:
         radial-gradient(900px 500px at 50% 40%, rgba(84,25,166,0.12), transparent 70%),
         radial-gradient(700px 500px at 50% 20%, rgba(24,163,211,0.08), transparent 75%),
@@ -78,6 +118,18 @@
         radial-gradient(900px 500px at 50% 40%, rgba(150,39,53,0.15), transparent 70%),
         radial-gradient(700px 500px at 50% 20%, rgba(201,102,29,0.10), transparent 75%),
         linear-gradient(180deg, #120b0c 0%, #0c0b13 100%);
+    }
+
+    body[data-font="inter"] {
+      --app-font-stack: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body[data-font="roboto-slab"] {
+      --app-font-stack: "GH Roboto Slab", "Roboto Slab", Georgia, Cambria, "Times New Roman", serif;
+    }
+
+    body[data-font="atkinson-hyperlegible"] {
+      --app-font-stack: "GH Atkinson Hyperlegible", "Atkinson Hyperlegible", Inter, Segoe UI, system-ui, sans-serif;
     }
 
     body[data-theme="emerald"] {
@@ -918,6 +970,12 @@
       gap: 12px;
     }
 
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
     .theme-card {
       border: 1px solid rgba(255,255,255,.07);
       border-radius: 16px;
@@ -976,6 +1034,55 @@
       line-height: 1.5;
     }
 
+    .font-card {
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: .16s ease;
+    }
+
+    .font-card.active {
+      border-color: color-mix(in srgb, var(--cyan) 18%, transparent);
+      box-shadow: 0 0 20px var(--glow-cyan);
+      background: linear-gradient(90deg, color-mix(in srgb, var(--surface-cyan) 65%, transparent), color-mix(in srgb, var(--surface-purple) 60%, transparent));
+    }
+
+    .font-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    .font-preview {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      padding: 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: linear-gradient(135deg, rgba(8, 17, 31, .96), rgba(17, 23, 42, .94));
+      color: #f3f8ff;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+
+    .font-preview.inter {
+      font-family: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    .font-preview.roboto-slab {
+      font-family: "GH Roboto Slab", "Roboto Slab", Georgia, serif;
+    }
+
+    .font-preview.atkinson-hyperlegible {
+      font-family: "GH Atkinson Hyperlegible", "Atkinson Hyperlegible", Inter, Segoe UI, sans-serif;
+    }
+
     .settings-item {
       padding: 14px;
       border-radius: 14px;
@@ -1016,6 +1123,18 @@
       font-size: 14px;
       line-height: 1.6;
       white-space: pre-line;
+    }
+
+    .settings-section-title {
+      margin: 0 0 12px;
+      color: #eef6ff;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+
+    .settings-section + .settings-section {
+      margin-top: 18px;
     }
 
     .toolbar {
@@ -1613,6 +1732,62 @@
 
     .toast.show { opacity: 1; }
 
+    .update-notice-wrap {
+      position: fixed;
+      top: 102px;
+      right: 28px;
+      z-index: 58;
+      width: min(360px, calc(100vw - 36px));
+    }
+
+    .update-notice {
+      padding: 16px;
+      background: rgba(11, 18, 32, .96);
+      border: 1px solid rgba(120, 227, 255, .16);
+      box-shadow: 0 22px 48px rgba(0,0,0,.34), 0 0 22px var(--glow-cyan);
+      animation: fadeSoftIn .18s ease-out;
+    }
+
+    .update-notice-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .update-notice-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #eff8ff;
+      margin-bottom: 4px;
+    }
+
+    .update-notice-sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .update-notice-close {
+      appearance: none;
+      border: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      color: #f3fbff;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .update-notice-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
     .scroll-top-btn {
       position: fixed;
       right: 28px;
@@ -1653,6 +1828,7 @@
 
     @media (max-width: 860px) {
       .topbar { padding-inline: 18px; }
+      .update-notice-wrap { top: 92px; right: 18px; width: min(360px, calc(100vw - 24px)); }
       .view { padding-inline: 18px; }
       .hero { margin-top: 60px; }
       .search-inner { flex-wrap: wrap; }
@@ -1671,7 +1847,7 @@
         <div class="brand-icon">👻</div>
         <div>
           <div class="brand-title">Ghost Hunter Pro</div>
-          <div class="brand-sub"><span id="app-version-label">v2.3.7</span> • <span class="desktop">Desktop Mode</span></div>
+          <div class="brand-sub"><span id="app-version-label">v2.3.8</span> • <span class="desktop">Desktop Mode</span></div>
         </div>
       </div>
       <div class="tabs">
@@ -1687,7 +1863,7 @@
     </div>
 
     <footer class="footer">
-      <span id="app-footer-version">Ghost Hunter Pro v2.3.7</span> • Not affiliated with Valve or Steam<br />
+      <span id="app-footer-version">Ghost Hunter Pro v2.3.8</span> • Not affiliated with Valve or Steam<br />
       Paths are generated based on common known locations. Always verify before deleting.
     </footer>
   </div>
@@ -1696,6 +1872,7 @@
   <div id="confirm-overlay" class="modal-overlay"></div>
   <div id="selection-overlay" class="modal-overlay"></div>
   <div id="toast" class="toast"></div>
+  <div id="update-notice-root"></div>
 
   <script>
     const state = {
@@ -1717,6 +1894,7 @@
       settingsInfo: null,
       settingsTab: 'updates',
       updateInfo: null,
+      updateNotice: null,
       bulkReviewOpen: false,
       bulkExpandedAppIds: [],
       modalGameId: null,
@@ -1733,6 +1911,7 @@
     const $confirm = document.getElementById('confirm-overlay');
     const $selection = document.getElementById('selection-overlay');
     const $toast = document.getElementById('toast');
+    const $updateNotice = document.getElementById('update-notice-root');
 
     function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -1823,6 +2002,16 @@
         groups.set(path.category, list);
       }
       return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
+    function formatInstalledSourceLabel(source) {
+      const value = String(source || '');
+      if (value === 'Epic') return 'Epic Games';
+      return value;
+    }
+
+    function formatInstalledSources(sources) {
+      return (sources || []).map(formatInstalledSourceLabel).filter(Boolean).join(', ');
     }
 
     function getFilteredLibraryItems() {
@@ -1989,7 +2178,7 @@
         wrap.appendChild(box);
       }
       box.innerHTML = state.homeSuggestions.map(item => `
-        <button class="suggestion" type="button" data-action="pick-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+        <button class="suggestion" type="button" tabindex="-1" data-action="pick-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
           ${item.tiny_image ? `<img src="${escapeHtml(item.tiny_image)}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" /><div class="fallback" style="display:none">👻</div>` : `<div class="fallback">👻</div>`}
           <div>
             <div class="suggestion-title">${escapeHtml(item.name)}</div>
@@ -2039,12 +2228,27 @@
       document.body.dataset.theme = themeName || 'neon';
     }
 
+    function applyFont(fontName) {
+      document.body.dataset.font = fontName || 'inter';
+    }
+
     async function setTheme(themeName) {
       const response = await apiCall('set_theme', themeName);
       if (response && response.ok) {
         if (!state.settingsInfo) state.settingsInfo = {};
         state.settingsInfo.theme = response.theme;
         applyTheme(response.theme);
+        renderSettings();
+        renderTabs();
+      }
+    }
+
+    async function setFont(fontName) {
+      const response = await apiCall('set_font', fontName);
+      if (response && response.ok) {
+        if (!state.settingsInfo) state.settingsInfo = {};
+        state.settingsInfo.font = response.font;
+        applyFont(response.font);
         renderSettings();
         renderTabs();
       }
@@ -2058,25 +2262,46 @@
       }
       applyVersionLabels();
       applyTheme(state.settingsInfo && state.settingsInfo.theme ? state.settingsInfo.theme : 'neon');
-      restoreHomeInputFocus();
+      applyFont(state.settingsInfo && state.settingsInfo.font ? state.settingsInfo.font : 'inter');
     }
 
     function applyVersionLabels() {
-      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '2.3.7';
+      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '2.3.8';
       const top = document.getElementById('app-version-label');
       const footer = document.getElementById('app-footer-version');
       if (top) top.textContent = `v${version}`;
       if (footer) footer.textContent = `Ghost Hunter Pro v${version}`;
     }
 
-    async function refreshUpdateInfo() {
+    async function refreshUpdateInfo(options = {}) {
       try {
         state.updateInfo = await apiCall('check_for_updates');
       } catch (error) {
         state.updateInfo = { ok: false, configured: false, error: error.message || 'Update check failed.' };
       }
+      if (state.updateInfo && state.updateInfo.ok && state.updateInfo.update_available) {
+        state.updateNotice = state.updateInfo;
+      } else if (!options.preserveNotice) {
+        state.updateNotice = null;
+      }
       renderSettings();
       renderTabs();
+      renderUpdateNotice();
+    }
+
+    async function checkStartupUpdateNotice() {
+      try {
+        const update = await apiCall('check_for_updates');
+        if (update && update.ok) {
+          state.updateInfo = update;
+          if (update.update_available) {
+            state.updateNotice = update;
+          }
+        }
+      } catch {}
+      renderSettings();
+      renderTabs();
+      renderUpdateNotice();
     }
 
     function clearHomeView() {
@@ -2176,7 +2401,7 @@
             ${state.homeSuggestions.length ? `
               <div class="suggestions" id="home-suggestions-box">
                 ${state.homeSuggestions.map(item => `
-                  <button class="suggestion" type="button" data-action="pick-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+                  <button class="suggestion" type="button" tabindex="-1" data-action="pick-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
                     ${item.tiny_image ? `<img src="${escapeHtml(item.tiny_image)}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" /><div class="fallback" style="display:none">👻</div>` : `<div class="fallback">👻</div>`}
                     <div>
                       <div class="suggestion-title">${escapeHtml(item.name)}</div>
@@ -2252,12 +2477,12 @@
                   <div class="card-fallback" style="display:${item.header_image ? 'none' : 'grid'}">👻</div>
                   ${item.archived
                     ? `<div class="archive-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg></span>Hidden</div>`
-                    : item.has_leftovers ? `<div class="status-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M8 6h8"></path><path d="M6 6h12l-1 14H7L6 6z"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></span>Leftovers found</div>` : item.installed ? `<div class="status-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 16.5 19 7.5"></path></svg></span>Installed</div>` : ''}
+                    : item.has_leftovers ? `<div class="status-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M8 6h8"></path><path d="M6 6h12l-1 14H7L6 6z"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></span>Leftovers found</div>` : ''}
                 </div>
                 <div class="card-body" data-action="open-game" data-appid="${escapeHtml(item.appid)}">
                   <div class="game-title">${escapeHtml(item.name)}</div>
                   <div class="game-sub">AppID: ${escapeHtml(item.appid)}</div>
-                  ${item.installed ? `<div class="game-flags"><span class="mini-badge legit">Installed: ${escapeHtml((item.installed_sources || []).join(', '))}</span></div>` : ''}
+                  ${item.installed ? `<div class="game-flags"><span class="mini-badge legit">Installed: ${escapeHtml(formatInstalledSources(item.installed_sources || []))}</span></div>` : ''}
                 </div>
               </article>
             `).join('')}
@@ -2315,6 +2540,32 @@
           <div class="confirm-actions">
             <button class="btn" data-action="confirm-cancel">${escapeHtml(dialog.cancelText || 'Cancel')}</button>
             <button class="btn primary" data-action="confirm-ok">${escapeHtml(dialog.confirmText || 'Confirm')}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUpdateNotice() {
+      if (!(state.updateNotice && state.updateNotice.update_available)) {
+        $updateNotice.innerHTML = '';
+        return;
+      }
+      const update = state.updateNotice;
+      $updateNotice.innerHTML = `
+        <div class="update-notice-wrap">
+          <div class="update-notice card">
+            <div class="update-notice-head">
+              <div>
+                <div class="update-notice-title">A new version is available</div>
+                <div class="update-notice-sub">Current: ${escapeHtml(update.current_version || '')} • Latest: ${escapeHtml(update.latest_version || '')}</div>
+              </div>
+              <button class="update-notice-close" data-action="dismiss-update-notice">✕</button>
+            </div>
+            <div class="update-notice-sub">Open the Updates tab to download the latest build or check the release page.</div>
+            <div class="update-notice-actions">
+              <button class="btn primary" data-action="open-update-settings">View Update</button>
+              <button class="btn" data-action="dismiss-update-notice">Later</button>
+            </div>
           </div>
         </div>
       `;
@@ -2442,8 +2693,8 @@
                   <h3 class="modal-title">${escapeHtml(game.name)}</h3>
                   <div class="tags" style="margin-top:12px;">
                     <span class="tag cyan">#${escapeHtml(game.appid)}</span>
-                    <span class="tag red">${game.archived ? 'Hidden' : game.has_leftovers ? 'Leftovers found' : 'Installed'}</span>
-                    ${game.installed ? `<span class="tag legit">Installed: ${escapeHtml((game.installed_sources || []).join(', '))}</span>` : ''}
+                    ${game.archived ? `<span class="tag red">Hidden</span>` : game.has_leftovers ? `<span class="tag red">Leftovers found</span>` : ''}
+                    ${game.installed ? `<span class="tag legit">Installed: ${escapeHtml(formatInstalledSources(game.installed_sources || []))}</span>` : ''}
                     <span class="tag">${game.path_count} path${game.path_count === 1 ? '' : 's'}</span>
                     <span class="tag">${formatSize(game.total_size)}</span>
                   </div>
@@ -2550,15 +2801,31 @@
         </div>
       `;
 
-      const themeTab = `
-        <div class="theme-grid">
-          ${(info.theme_options || []).map(theme => `
-            <button class="theme-card ${info.theme === theme.id ? 'active' : ''}" data-action="set-theme" data-theme-id="${escapeHtml(theme.id)}">
-              <div class="theme-preview ${escapeHtml(theme.id)}"></div>
-              <div class="theme-card-title">${escapeHtml(theme.label)}</div>
-              <div class="theme-card-sub">${escapeHtml(theme.description || '')}</div>
-            </button>
-          `).join('')}
+      const uiTab = `
+        <div class="settings-sub">Customize how Ghost Hunter Pro looks across the whole app.</div>
+        <div class="settings-section">
+          <div class="settings-section-title">Themes</div>
+          <div class="theme-grid">
+            ${(info.theme_options || []).map(theme => `
+              <button class="theme-card ${info.theme === theme.id ? 'active' : ''}" data-action="set-theme" data-theme-id="${escapeHtml(theme.id)}">
+                <div class="theme-preview ${escapeHtml(theme.id)}"></div>
+                <div class="theme-card-title">${escapeHtml(theme.label)}</div>
+                <div class="theme-card-sub">${escapeHtml(theme.description || '')}</div>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Fonts</div>
+          <div class="font-grid">
+            ${(info.font_options || []).map(font => `
+              <button class="font-card ${info.font === font.id ? 'active' : ''}" data-action="set-font" data-font-id="${escapeHtml(font.id)}">
+                <div class="font-preview ${escapeHtml(font.id)}">Ghost Hunter Pro</div>
+                <div class="theme-card-title">${escapeHtml(font.label)}</div>
+                <div class="theme-card-sub">${escapeHtml(font.description || '')}</div>
+              </button>
+            `).join('')}
+          </div>
         </div>
       `;
 
@@ -2577,7 +2844,7 @@
       `;
 
       const active = state.settingsTab || 'updates';
-      const content = active === 'builds' ? buildsTab : active === 'themes' ? themeTab : active === 'about' ? aboutTab : updatesTab;
+      const content = active === 'builds' ? buildsTab : active === 'ui' ? uiTab : active === 'about' ? aboutTab : updatesTab;
 
       $settings.innerHTML = `
         <div class="settings-shell">
@@ -2585,7 +2852,7 @@
             <div class="settings-title">Settings</div>
             <div class="settings-tabs">
               <button class="settings-tab ${active === 'updates' ? 'active' : ''}" data-action="settings-tab" data-settings-tab="updates">Updates</button>
-              <button class="settings-tab ${active === 'themes' ? 'active' : ''}" data-action="settings-tab" data-settings-tab="themes">Themes</button>
+              <button class="settings-tab ${active === 'ui' ? 'active' : ''}" data-action="settings-tab" data-settings-tab="ui">UI</button>
               <button class="settings-tab ${active === 'builds' ? 'active' : ''}" data-action="settings-tab" data-settings-tab="builds">Builds</button>
               <button class="settings-tab ${active === 'about' ? 'active' : ''}" data-action="settings-tab" data-settings-tab="about">About</button>
             </div>
@@ -2603,14 +2870,16 @@
       renderModal();
       renderSelectionReview();
       renderConfirm();
+      renderUpdateNotice();
     }
 
     async function refreshLibrary(options = {}) {
       const keepModal = options.keepModal !== false;
+      const forceRescan = options.forceRescan === true;
       state.libraryLoading = true;
       renderAll();
       try {
-        const response = await apiCall('scan_library');
+        const response = await apiCall(forceRescan ? 'rescan_library' : 'scan_library');
         if (!response.ok) throw new Error(response.error || 'Failed to scan library');
         state.libraryItems = response.items || [];
         state.libraryLoaded = true;
@@ -2699,6 +2968,14 @@
       }
     });
 
+    document.addEventListener('mousedown', event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.closest('.suggestion')) {
+        event.preventDefault();
+      }
+    });
+
     document.addEventListener('input', event => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
@@ -2761,11 +3038,15 @@
             await refreshUpdateInfo();
           } else if (state.activeTab === 'home') {
             restoreHomeInputFocus();
+          } else if (state.activeTab === 'library' && !state.libraryLoaded && !state.libraryLoading) {
+            await refreshLibrary();
           }
           break;
         case 'library-scan':
+          await refreshLibrary({ forceRescan: true });
+          break;
         case 'library-rescan':
-          await refreshLibrary();
+          await refreshLibrary({ forceRescan: true });
           break;
         case 'library-filter':
           state.libraryFilter = actionEl.dataset.filter || 'visible';
@@ -2871,9 +3152,22 @@
         case 'set-theme':
           await setTheme(actionEl.dataset.themeId || 'neon');
           break;
+        case 'set-font':
+          await setFont(actionEl.dataset.fontId || 'inter');
+          break;
         case 'settings-check-updates':
           state.settingsTab = 'updates';
-          await refreshUpdateInfo();
+          await refreshUpdateInfo({ preserveNotice: true });
+          break;
+        case 'dismiss-update-notice':
+          state.updateNotice = null;
+          renderUpdateNotice();
+          break;
+        case 'open-update-settings':
+          state.activeTab = 'settings';
+          state.settingsTab = 'updates';
+          renderAll();
+          updateLibraryScrollButton();
           break;
         case 'settings-open-releases':
           if (state.settingsInfo && state.settingsInfo.repo_url) {
@@ -2953,10 +3247,9 @@
       }
       await loadHistory();
       await loadSettingsInfo();
-      state.libraryLoading = true;
       renderAll();
-      await refreshLibrary();
       updateLibraryScrollButton();
+      checkStartupUpdateNotice();
     }
 
     bootstrap();

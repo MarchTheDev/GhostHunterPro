@@ -44,6 +44,8 @@ class StateStore:
             self.data["search_history"] = []
         if not isinstance(self.data.get("theme"), str):
             self.data["theme"] = "neon"
+        if not isinstance(self.data.get("font"), str):
+            self.data["font"] = "inter"
 
     def save(self) -> None:
         safe_write_json(STATE_FILE, self.data)
@@ -87,4 +89,11 @@ class StateStore:
 
     def set_theme(self, theme_name: str) -> None:
         self.data["theme"] = str(theme_name or "neon")
+        self.save()
+
+    def font(self) -> str:
+        return str(self.data.get("font", "inter"))
+
+    def set_font(self, font_name: str) -> None:
+        self.data["font"] = str(font_name or "inter")
         self.save()
