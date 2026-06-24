@@ -41,3 +41,10 @@ This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE
 
 ## Made by
 TheMarch88 with the contribution of nxllvxxd 
+
+
+# NEWS
+
+The Atkinson font isn't working and will be fixed in next update.
+
+The software might get flagged by the anti virus, i'm working on fixing this problem, nothing malicious is getting spread in this project.
