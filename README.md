@@ -40,4 +40,4 @@ There you can download:
 This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE.txt) file for details.
 
 ## Made by
-TheMarch88
+TheMarch88 with the contribution of nxllvxxd 
