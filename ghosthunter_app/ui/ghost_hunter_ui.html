@@ -141,13 +141,18 @@
     .preset-card-name {
       font-size: 13px;
       font-weight: 900;
-      padding-right: 26px;
+      padding-right: 32px;
+    }
+
+    .preset-card .theme-card-main {
+      min-height: 0;
+      display: block;
     }
 
     .preset-delete {
       position: absolute;
       right: 8px;
-      bottom: 8px;
+      top: 8px;
       width: 25px;
       height: 25px;
       border: 1px solid rgba(255,255,255,.1);
@@ -160,17 +165,53 @@
     }
 
     .custom-edit-btn {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
       margin-top: 12px;
       width: 100%;
       justify-content: center;
       color: #fff;
-      border-color: color-mix(in srgb, var(--cyan) 34%, transparent);
-      background: linear-gradient(90deg, var(--surface-cyan-strong), var(--surface-purple-strong));
-      box-shadow: 0 0 20px var(--glow-cyan), inset 0 0 0 1px rgba(255,255,255,.05);
+      border-color: color-mix(in srgb, var(--cyan) 44%, transparent);
+      background:
+        radial-gradient(circle at 18% 50%, color-mix(in srgb, var(--cyan) 28%, transparent), transparent 34%),
+        linear-gradient(90deg, var(--surface-cyan-strong), var(--surface-purple-strong));
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--cyan) 10%, transparent),
+        0 0 26px var(--glow-cyan),
+        0 0 20px var(--glow-purple),
+        inset 0 0 0 1px rgba(255,255,255,.06);
+      animation: customEditGlow 2.4s ease-in-out infinite;
+    }
+
+    .custom-edit-btn::after {
+      content: "";
+      position: absolute;
+      inset: -40% auto -40% -55%;
+      width: 54%;
+      z-index: -1;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.20), transparent);
+      transform: rotate(18deg);
+      transition: .24s ease;
     }
 
     .custom-edit-btn:hover {
-      box-shadow: 0 0 28px var(--glow-cyan), 0 0 18px var(--glow-purple), inset 0 0 0 1px rgba(255,255,255,.08);
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--cyan) 64%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent),
+        0 0 38px var(--glow-cyan),
+        0 0 28px var(--glow-purple),
+        inset 0 0 0 1px rgba(255,255,255,.10);
+    }
+
+    .custom-edit-btn:hover::after {
+      left: 110%;
+    }
+
+    @keyframes customEditGlow {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.16); }
     }
 
     .custom-theme-modal-card {
@@ -202,6 +243,18 @@
       padding: 18px;
       display: grid;
       gap: 16px;
+    }
+
+    .custom-theme-modal-preview {
+      width: 100%;
+      height: 124px;
+      min-height: 124px;
+      border-radius: 18px;
+      border: 1px solid color-mix(in srgb, var(--cyan) 20%, rgba(255,255,255,.08));
+      background:
+        radial-gradient(circle at 18% 26%, color-mix(in srgb, var(--custom-accent, #d946ef) 48%, transparent), transparent 34%),
+        linear-gradient(135deg, #0a1322, var(--custom-accent, #d946ef) 58%, var(--custom-accent-2, #fb7185));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 0 30px var(--glow-cyan);
     }
 
     * { box-sizing: border-box; }
@@ -1242,6 +1295,7 @@
     .theme-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      align-items: stretch;
       gap: 12px;
     }
 
@@ -1258,9 +1312,9 @@
       background: rgba(255,255,255,.03);
       color: var(--text);
       text-align: left;
-      cursor: pointer;
+      cursor: default;
       transition: .16s ease;
-      min-height: 188px;
+      min-height: 196px;
       display: flex;
       flex-direction: column;
       justify-content: stretch;
@@ -1282,6 +1336,7 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+      min-height: 148px;
       font: inherit;
     }
 
@@ -1298,15 +1353,21 @@
 
     .theme-preview {
       display: block;
-      width: 100%;
-      height: 72px;
-      min-height: 72px;
-      max-height: 72px;
+      inline-size: 100%;
+      block-size: 76px;
+      width: 100% !important;
+      height: 76px !important;
+      min-height: 76px !important;
+      max-height: 76px !important;
+      align-self: stretch;
       border-radius: 12px;
       margin-bottom: 12px;
-      border: 1px solid rgba(255,255,255,.06);
-      flex: 0 0 72px;
+      border: 1px solid rgba(255,255,255,.08);
+      flex: 0 0 76px;
       box-sizing: border-box;
+      overflow: hidden;
+      background-clip: padding-box;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.035);
     }
 
     .theme-preview.neon {
@@ -1869,13 +1930,18 @@
 
     .modal-overlay.show { display: flex; }
 
+    #custom-theme-overlay { z-index: 50; }
+    #preset-overlay { z-index: 70; }
+
 
     .modal-overlay.closing {
       display: flex;
       animation: overlayFadeOut .18s ease-in forwards;
     }
 
-    .modal-overlay.closing .modal-card {
+    .modal-overlay.closing .modal-card,
+    .modal-overlay.closing .custom-theme-modal-card,
+    .modal-overlay.closing .preset-modal-card {
       animation: tvClose .18s ease-in forwards;
     }
 
@@ -2281,7 +2347,7 @@
         <div class="brand-icon"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 2a8 8 0 0 0-8 8v10l2.4-1.8L8.8 20l2.4-1.8L13.6 20l2.4-1.8L18.4 20V10a8 8 0 0 0-8-8Z"></path></svg></div>
         <div>
           <div class="brand-title">Ghost Hunter Pro</div>
-          <div class="brand-sub"><span id="app-version-label">v2.3.8</span> • <span class="desktop">Desktop Mode</span></div>
+          <div class="brand-sub"><span id="app-version-label">v3.0</span> • <span class="desktop">Desktop Mode</span></div>
         </div>
       </div>
       <div class="tabs">
@@ -2297,7 +2363,7 @@
     </div>
 
     <footer class="footer">
-      <span id="app-footer-version">Ghost Hunter Pro v2.3.8</span> • Not affiliated with Valve or Steam<br />
+      <span id="app-footer-version">Ghost Hunter Pro v3.0</span> • Not affiliated with Valve or Steam<br />
       Paths are generated based on common known locations. Always verify before deleting.
     </footer>
   </div>
@@ -2339,9 +2405,11 @@
       presetDialogOpen: false,
       presetName: '',
       customThemeEditorOpen: false,
+      customThemeEditorClosing: false,
     };
 
     let suggestionTimer = null;
+    let customThemeSaveTimer = null;
     let confirmResolver = null;
 
     const $home = document.getElementById('view-home');
@@ -2763,12 +2831,19 @@
           renderSettings();
           renderTabs();
         }
-        if (state.customThemeEditorOpen) {
+        if (options.refreshEditor !== false && state.customThemeEditorOpen) {
           renderCustomThemeEditor();
         }
       } catch (error) {
         toast(error.message || 'Could not set custom color');
       }
+    }
+
+    function scheduleCustomThemeColorSave(color) {
+      clearTimeout(customThemeSaveTimer);
+      customThemeSaveTimer = setTimeout(() => {
+        setCustomThemeColor(color, { render: false, refreshEditor: false });
+      }, 260);
     }
 
     async function saveCustomThemePreset(name, color) {
@@ -2817,7 +2892,7 @@
     }
 
     function applyVersionLabels() {
-      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '2.3.8';
+      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '3.0';
       const top = document.getElementById('app-version-label');
       const footer = document.getElementById('app-footer-version');
       if (top) top.textContent = `v${version}`;
@@ -2879,7 +2954,7 @@
                   <span class="history-icon">${icon('ghost')}</span>
                   <span>${escapeHtml(item.name)}</span>
                 </button>
-                <button class="history-remove" title="Remove from history" data-action="history-remove" data-appid="${escapeHtml(item.appid)}">✕</button>
+                <button class="history-remove" title="Remove from history" data-action="history-remove" data-appid="${escapeHtml(item.appid)}">${icon('x')}</button>
               </div>
             `).join('')}
           </div>
@@ -2967,7 +3042,7 @@
             <button class="btn hero-link" data-action="switch-tab" data-tab="library">Browse Library</button>
           </div>
         </div>
-        ${result ? `<div class="home-tools"><button class="btn primary" data-action="home-clear">✕ Close</button></div>` : ""}
+        ${result ? `<div class="home-tools"><button class="btn primary" data-action="home-clear">${icon('x')} Close</button></div>` : ""}
         ${resultsHtml}
         ${!result && state.homeLoading ? `
           <div class="loading-state card">
@@ -3051,7 +3126,7 @@
             <label class="search-inline">
               <span style="color:#75839c;">${icon('search')}</span>
               <input id="library-filter-input" value="${escapeHtml(state.libraryQuery)}" placeholder="Filter games by name or AppID..." />
-              ${state.libraryQuery ? `<button class="search-clear-btn" type="button" data-action="library-clear-search" title="Clear search" aria-label="Clear library search">✕</button>` : ''}
+              ${state.libraryQuery ? `<button class="search-clear-btn" type="button" data-action="library-clear-search" title="Clear search" aria-label="Clear library search">${icon('x')}</button>` : ''}
             </label>
             <div class="toolbar-actions">
               <button class="btn filter ${state.libraryFilter === 'visible' ? 'active' : ''}" data-action="library-filter" data-filter="visible">${icon('eye')} Show Visible (${activeCount})</button>
@@ -3087,6 +3162,7 @@
           <div class="custom-theme-row">
             <input type="color" value="${escapeHtml(normalizeHexColor(info.custom_theme_color || '#d946ef'))}" data-action="custom-theme-color-input" aria-label="Custom theme color" />
             <input class="hex-input" value="${escapeHtml(normalizeHexColor(info.custom_theme_color || '#d946ef'))}" data-action="custom-theme-hex-input" maxlength="7" aria-label="Custom theme hex color" />
+            <button class="settings-tab" type="button" data-action="apply-custom-theme">Apply Theme</button>
             <button class="settings-tab active" type="button" data-action="open-preset-dialog">Save Preset</button>
           </div>
         </div>
@@ -3099,15 +3175,27 @@
       `;
     }
 
+    function closeCustomThemeEditorAnimated() {
+      if (!state.customThemeEditorOpen || state.customThemeEditorClosing) return;
+      state.customThemeEditorClosing = true;
+      renderCustomThemeEditor();
+      setTimeout(() => {
+        state.customThemeEditorOpen = false;
+        state.customThemeEditorClosing = false;
+        renderCustomThemeEditor();
+      }, 190);
+    }
+
     function renderCustomThemeEditor() {
-      if (!state.customThemeEditorOpen) {
-        $customTheme.classList.remove('show');
+      if (!state.customThemeEditorOpen && !state.customThemeEditorClosing) {
+        $customTheme.classList.remove('show', 'closing');
         $customTheme.innerHTML = '';
         return;
       }
       const info = state.settingsInfo || {};
       const color = normalizeHexColor(info.custom_theme_color || '#d946ef');
       $customTheme.classList.add('show');
+      $customTheme.classList.toggle('closing', !!state.customThemeEditorClosing);
       $customTheme.innerHTML = `
         <div class="custom-theme-modal-card card" role="dialog" aria-modal="true">
           <div class="custom-theme-modal-head">
@@ -3118,7 +3206,7 @@
             <button class="modal-close" data-action="close-custom-theme-editor">${icon('x')}</button>
           </div>
           <div class="custom-theme-modal-body">
-            <div class="theme-preview custom" style="height:120px; min-height:120px; max-height:120px; flex-basis:120px;"></div>
+            <div class="custom-theme-modal-preview"></div>
             <div class="settings-note">Current custom color: ${escapeHtml(color)}</div>
             ${customThemeEditorHtml()}
           </div>
@@ -3186,7 +3274,7 @@ Current color: ${escapeHtml(color)}</div>
                 <div class="update-notice-title">A new version is available</div>
                 <div class="update-notice-sub">Current: ${escapeHtml(update.current_version || '')} • Latest: ${escapeHtml(update.latest_version || '')}</div>
               </div>
-              <button class="update-notice-close" data-action="dismiss-update-notice">✕</button>
+              <button class="update-notice-close" data-action="dismiss-update-notice">${icon('x')}</button>
             </div>
             <div class="update-notice-sub">Open the Updates tab to download the latest build or check the release page.</div>
             <div class="update-notice-actions">
@@ -3218,7 +3306,7 @@ Current color: ${escapeHtml(color)}</div>
               <h3 class="selection-title">Selected Games</h3>
               <div class="selection-sub">Review the games you selected, remove any by mistake, expand them to inspect paths, and decide whether to delete one game at a time or everything at once.</div>
             </div>
-            <button class="modal-close" data-action="close-selection-review">✕</button>
+            <button class="modal-close" data-action="close-selection-review">${icon('x')}</button>
           </div>
           <div class="selection-actions">
             <button class="btn primary" data-action="selection-delete-all">Delete All Selected</button>
@@ -3340,7 +3428,7 @@ Current color: ${escapeHtml(color)}</div>
                     <span class="tag">${formatSize(game.total_size)}</span>
                   </div>
                 </div>
-                <button class="modal-close" data-action="close-modal">✕</button>
+                <button class="modal-close" data-action="close-modal">${icon('x')}</button>
               </div>
               <div class="modal-actions">
                 <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}">Open on SteamDB</button>
@@ -3462,7 +3550,7 @@ Current color: ${escapeHtml(color)}</div>
                     <div class="theme-card-title">${escapeHtml(theme.label)}</div>
                     <div class="theme-card-sub">${escapeHtml(theme.description || '')}</div>
                   </button>
-                  ${theme.id === 'custom' ? `<button class="settings-tab custom-edit-btn" type="button" data-action="open-custom-theme-editor">Edit Custom Theme</button>` : ''}
+                  ${theme.id === 'custom' ? `<button class="settings-tab custom-edit-btn" type="button" data-action="open-custom-theme-editor">${icon('palette')} Edit Custom Theme</button>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -3679,7 +3767,7 @@ Current color: ${escapeHtml(color)}</div>
         state.settingsInfo.theme = 'custom';
         applyCustomThemeColor(color);
         applyTheme('custom');
-        setCustomThemeColor(color, { render: false });
+        scheduleCustomThemeColorSave(color);
       }
       if (target.dataset.action === 'custom-theme-hex-input') {
         const raw = String(target.value || '').trim();
@@ -3692,7 +3780,7 @@ Current color: ${escapeHtml(color)}</div>
           state.settingsInfo.custom_theme_color = color;
           state.settingsInfo.theme = 'custom';
           applyTheme('custom');
-          setCustomThemeColor(color, { render: false });
+          scheduleCustomThemeColorSave(color);
         }
       }
     });
@@ -3720,8 +3808,7 @@ Current color: ${escapeHtml(color)}</div>
           renderPresetDialog();
         }
         if (event.target === $customTheme) {
-          state.customThemeEditorOpen = false;
-          renderCustomThemeEditor();
+          closeCustomThemeEditorAnimated();
         }
         return;
       }
@@ -3860,6 +3947,12 @@ Current color: ${escapeHtml(color)}</div>
         case 'set-theme':
           await setTheme(actionEl.dataset.themeId || 'neon');
           break;
+        case 'apply-custom-theme': {
+          const color = state.settingsInfo && state.settingsInfo.custom_theme_color ? state.settingsInfo.custom_theme_color : '#d946ef';
+          await setCustomThemeColor(color, { refreshEditor: false });
+          toast('Custom theme applied');
+          break;
+        }
         case 'open-preset-dialog':
           state.presetName = '';
           state.presetDialogOpen = true;
@@ -3887,8 +3980,7 @@ Current color: ${escapeHtml(color)}</div>
           renderCustomThemeEditor();
           break;
         case 'close-custom-theme-editor':
-          state.customThemeEditorOpen = false;
-          renderCustomThemeEditor();
+          closeCustomThemeEditorAnimated();
           break;
         case 'set-font':
           await setFont(actionEl.dataset.fontId || 'inter');

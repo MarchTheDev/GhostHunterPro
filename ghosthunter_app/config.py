@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 APP_NAME = "Ghost Hunter Pro"
-APP_VERSION = "2.3.8"
+APP_VERSION = "3.0"
 APP_CREATOR = "TheMarch88"
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
 
