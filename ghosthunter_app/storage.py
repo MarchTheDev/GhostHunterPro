@@ -48,10 +48,6 @@ class StateStore:
             self.data["font"] = "inter"
         if not isinstance(self.data.get("custom_theme_color"), str):
             self.data["custom_theme_color"] = "#d946ef"
-        if not isinstance(self.data.get("custom_theme_color_2"), str):
-            self.data["custom_theme_color_2"] = "#fb7185"
-        if not isinstance(self.data.get("custom_theme_use_second_color"), bool):
-            self.data["custom_theme_use_second_color"] = False
         if not isinstance(self.data.get("custom_theme_presets"), list):
             self.data["custom_theme_presets"] = []
 
@@ -113,20 +109,6 @@ class StateStore:
         self.data["custom_theme_color"] = str(color or "#d946ef")
         self.save()
 
-    def custom_theme_color_2(self) -> str:
-        return str(self.data.get("custom_theme_color_2", "#fb7185"))
-
-    def set_custom_theme_color_2(self, color: str) -> None:
-        self.data["custom_theme_color_2"] = str(color or "#fb7185")
-        self.save()
-
-    def custom_theme_use_second_color(self) -> bool:
-        return bool(self.data.get("custom_theme_use_second_color", False))
-
-    def set_custom_theme_use_second_color(self, enabled: bool) -> None:
-        self.data["custom_theme_use_second_color"] = bool(enabled)
-        self.save()
-
     def custom_theme_presets(self) -> list[dict[str, str]]:
         presets = self.data.get("custom_theme_presets", [])
         if not isinstance(presets, list):
@@ -137,18 +119,15 @@ class StateStore:
                 continue
             name = str(item.get("name", "")).strip()
             color = str(item.get("color", "")).strip()
-            color2 = str(item.get("color2", "#fb7185")).strip()
-            use_second = bool(item.get("use_second", False))
             if name and color:
-                result.append({"name": name, "color": color, "color2": color2, "use_second": use_second})
+                result.append({"name": name, "color": color})
         return result
 
-    def add_custom_theme_preset(self, name: str, color: str, color2: str = "#fb7185", use_second: bool = False) -> None:
+    def add_custom_theme_preset(self, name: str, color: str) -> None:
         clean_name = str(name or "Custom Theme").strip()[:40] or "Custom Theme"
         clean_color = str(color or "#d946ef").strip()
-        clean_color2 = str(color2 or "#fb7185").strip()
         presets = [item for item in self.custom_theme_presets() if item.get("name", "").lower() != clean_name.lower()]
-        presets.insert(0, {"name": clean_name, "color": clean_color, "color2": clean_color2, "use_second": bool(use_second)})
+        presets.insert(0, {"name": clean_name, "color": clean_color})
         self.data["custom_theme_presets"] = presets[:12]
         self.save()
 
