@@ -1,4 +1,4 @@
-    GhostHunterPro - GUI a software to remove leftrovers games files
+    GhostHunterPro - A software to remove leftover games files
     Copyright (C) 2026  Marco Cornacchia Tanga
 
     This program is free software: you can redistribute it and/or modify
