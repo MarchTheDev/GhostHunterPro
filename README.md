@@ -5,7 +5,7 @@
 
 ## Description
 
-Ghost Hunter Pro is a desktop tool that helps you find and clean leftover game files.
+**Ghost Hunter Pro** is a desktop tool that helps you find and clean leftover game files.
 
 It is designed to make common leftover folders easier to inspect, organize, archive, and remove.
 
