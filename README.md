@@ -40,7 +40,7 @@ There you can download:
 - **The software might get flagged as a virus, it's a false positive. This is caused from the fact that it looks inside folders such appdata and has the function of deleting files.**
 - Always review paths before deleting anything.
 - Some actions may work better when run with Administrator permissions.
-- The app may detect both cracked leftovers and legitimate Steam-owned traces depending on where files are stored.
+- The app may detect both local leftovers and store platforms traces depending on where files are stored.
 
 ## License
 This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE.txt) file for details.
@@ -51,3 +51,5 @@ This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE
 - [nxllvxxd](https://github.com/nxllvxxd) - Contributor
 
 # NEWS
+
+v3.2 is coming soon, more things will be added and others will be fixed. ETA 2-10 days
