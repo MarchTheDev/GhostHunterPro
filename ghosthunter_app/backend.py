@@ -522,6 +522,21 @@ class Backend:
         # Artwork is intentionally independent from scanning: a failed image
         # lookup can never break a hunt or prevent a result from being shown.
         appid = str(game.get("appid") or "")
+        # History/catalog records only carry appid+name. Re-enrich missing
+        # metadata (developers, publishers, description) from cached details
+        # so repeat hunts show the same full card as the first one.
+        if appid.isdigit() and not (game.get("developers") or game.get("publishers")):
+            try:
+                details = self.steam.get_app_details(appid, timeout=3) or {}
+                game = {
+                    **game,
+                    "developers": game.get("developers") or details.get("developers", []),
+                    "publishers": game.get("publishers") or details.get("publishers", []),
+                    "short_description": game.get("short_description") or details.get("short_description", ""),
+                    "header_image": game.get("header_image") or details.get("header_image", ""),
+                }
+            except Exception:
+                pass
         if not game.get("header_image") and appid.isdigit():
             game = {**game, "header_image": self.steam.header_image_for_appid(appid)}
         self.state.record_history(game)
