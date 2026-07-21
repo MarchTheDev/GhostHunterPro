@@ -12,7 +12,6 @@ from .scanner import ScanEngine
 from .save_scanner import SaveScanner
 from .steam_api import SteamAPI
 from .unified_search import UnifiedSearch
-from .unified_search import UnifiedSearch
 from .storage import StateStore
 from .updater import UpdateManager
 from .utils import normalize_name
@@ -59,11 +58,32 @@ class Backend:
 
     def preview_game_appid(self, appid: str) -> dict[str, Any]:
         value = str(appid or '').strip()
-        if not value.isdigit():
-            return {"ok": False, "error": "Enter a numeric Steam AppID."}
-        game = self.steam.get_app_details(value, timeout=5)
+        if not value:
+            return {"ok": False, "error": "Enter a Steam AppID or game name."}
+        game = None
+        if value.isdigit():
+            game = self.steam.get_app_details(value, timeout=5)
         if not game or str(game.get("name", "")).lower().startswith("unknown game"):
-            return {"ok": False, "error": "No public Steam game was found for this AppID."}
+            game = self.steam.search_game(value, timeout=5)
+        if not game:
+            alias_appid = self.steam.aliases.get(normalize_name(value))
+            if alias_appid:
+                game = self.steam.get_app_details(alias_appid, timeout=5)
+        if not game:
+            return {"ok": False, "error": "No public Steam game was found for this input."}
+
+        gid = str(game.get("appid") or "")
+        header = str(game.get("header_image") or "")
+        if not header and gid.isdigit():
+            header = self.steam.header_image_for_appid(gid)
+        if not header:
+            try:
+                cover = self.steam.igdb_cover_for_name(game.get("name", ""), timeout=3)
+                if cover:
+                    header = cover
+            except Exception:
+                pass
+        game = {**game, "header_image": header, "appid": gid if gid else value}
         return {"ok": True, "game": game}
 
     def ping(self) -> dict[str, Any]:
@@ -185,6 +205,11 @@ class Backend:
         self.state.set_theme(theme_name if theme_name in allowed else "neon")
         self._save()
         return {"ok": True, "theme": self.state.theme()}
+
+    def set_theme_mode(self, mode: str) -> dict[str, Any]:
+        self.state.set_theme_mode(mode)
+        self._save()
+        return {"ok": True, "theme_mode": self.state.theme_mode()}
 
     def set_font(self, font_name: str) -> dict[str, Any]:
         allowed = {option["id"] for option in self.FONT_OPTIONS}
@@ -339,6 +364,7 @@ class Backend:
         payload["font_size"] = self.state.font_size()
         payload["custom_theme_color_2"] = self.state.custom_theme_color_2()
         payload["custom_theme_use_second_color"] = self.state.custom_theme_use_second_color()
+        payload["theme_mode"] = self.state.theme_mode()
         return payload
 
     def check_for_updates(self) -> dict[str, Any]:
@@ -370,17 +396,118 @@ class Backend:
             appid = str(game.get("appid") or "")
             if appid and appid not in catalog:
                 catalog[appid] = dict(game)
-        return UnifiedSearch(self.steam, catalog)
+        return UnifiedSearch(self.steam, catalog, self.state)
 
-    def _unified_search(self) -> UnifiedSearch:
-        catalog = dict(self._ensure_installed_catalog())
-        # A game successfully hunted on Home has a trusted identity and cached
-        # confirmed paths. Include it in Library on the next refresh.
-        for game in self.state.history():
-            appid = str(game.get("appid") or "")
-            if appid and appid not in catalog:
-                catalog[appid] = dict(game)
-        return UnifiedSearch(self.steam, catalog)
+    def edit_game_details(self, old_appid: str, new_appid: str, name: str, header_image: str) -> dict[str, Any]:
+        old_key = str(old_appid or "").strip()
+        new_key = str(new_appid or old_key).strip()
+        if new_key and new_key != old_key:
+            taken: set[str] = set(str(a) for a in self._ensure_installed_catalog().keys())
+            taken.update(str(a) for a in self.state.custom_library_games().keys())
+            for source_appid, entry in self.state.game_overrides().items():
+                if str(source_appid) != old_key:
+                    taken.add(str((entry or {}).get("appid") or source_appid))
+            for game in self.state.history():
+                taken.add(str(game.get("appid") or ""))
+            if new_key in taken:
+                return {"ok": False, "error": f"AppID {new_key} is already used by another game in your library."}
+        self.state.set_game_override(old_appid, new_appid, name, header_image)
+        self._save()
+        return {"ok": True}
+
+    def add_custom_library_game(self, appid: str, name: str, header_image: str, custom_path: str) -> dict[str, Any]:
+        clean_appid = str(appid or '').strip() or f"custom-{normalize_name(name)}"
+        clean_name = str(name or '').strip() or f"Custom Game ({clean_appid})"
+        paths = []
+        if custom_path and os.path.exists(custom_path):
+            paths.append({
+                "path": custom_path,
+                "category": "Save Files",
+                "description": "Custom user path",
+                "source": "custom",
+                "risk": "safe",
+                "size": __import__("ghosthunter_app.utils", fromlist=["path_size"]).path_size(custom_path),
+                "is_dir": os.path.isdir(custom_path),
+            })
+        else:
+            temp_game = {"appid": clean_appid if clean_appid.isdigit() else "", "name": clean_name}
+            paths = SaveScanner.find_save_paths(temp_game, include_online=True, fetch_online=True)
+
+        no_leftovers = not paths
+        game_record = {
+            "appid": clean_appid,
+            "name": clean_name,
+            "header_image": header_image or "",
+            "paths": paths,
+            "path_count": len(paths),
+            "total_size": sum(p.get("size", 0) for p in paths),
+            "sources": [],
+            "installed": False,
+            "has_leftovers": bool(paths),
+            "is_custom": True,
+        }
+        self.state.add_custom_library_game(game_record)
+        self._save()
+        return {"ok": True, "game": game_record, "paths": paths, "no_leftovers": no_leftovers}
+
+    def remove_custom_library_game(self, appid: str) -> dict[str, Any]:
+        key = str(appid or "").strip()
+        if not key:
+            return {"ok": False, "error": "Missing AppID."}
+        custom = self.state.custom_library_games()
+        target = key if key in custom else ""
+        if not target:
+            # The card may display an overridden AppID (Edit Details changed
+            # it). Trace the override back to the original custom record.
+            for old_appid, entry in self.state.game_overrides().items():
+                if str((entry or {}).get("appid") or "") == key and str(old_appid) in custom:
+                    target = str(old_appid)
+                    break
+        if not target:
+            return {"ok": False, "error": "This game was not added manually, so it cannot be removed this way."}
+        self.state.remove_custom_library_game(target)
+        # Also drop any Edit Details override attached to this custom card so
+        # a future re-add starts clean.
+        self.state.remove_game_override(target)
+        self.state.remove_game_override(key)
+        self._save()
+        return {"ok": True}
+
+    def add_library_search_game(self, query: str) -> dict[str, Any]:
+        search = self._unified_search()
+        game = search.resolve_game(query)
+        if not game:
+            appid = str(query or '').strip()
+            if appid.isdigit():
+                details = self.steam.get_app_details(appid, timeout=3)
+                if details:
+                    game = {"appid": appid, **details}
+            if not game:
+                return {"ok": False, "error": "Game not found."}
+
+        paths = search.find_paths(game, fetch_verified=True)
+        no_leftovers = not paths
+        appid = str(game.get("appid") or f"custom-{normalize_name(game.get('name', 'game'))}")
+        name = game.get("name", f"Game ({appid})")
+        header_image = game.get("header_image", "")
+        if not header_image and appid.isdigit():
+            header_image = self.steam.header_image_for_appid(appid)
+
+        game_record = {
+            "appid": appid,
+            "name": name,
+            "header_image": header_image or "",
+            "paths": paths,
+            "path_count": len(paths),
+            "total_size": sum(p.get("size", 0) for p in paths),
+            "sources": [],
+            "installed": False,
+            "has_leftovers": bool(paths),
+            "is_custom": True,
+        }
+        self.state.add_custom_library_game(game_record)
+        self._save()
+        return {"ok": True, "game": game_record, "no_leftovers": no_leftovers}
 
     def home_search(self, query: str) -> dict[str, Any]:
         search = self._unified_search()

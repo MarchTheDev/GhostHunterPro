@@ -43,10 +43,23 @@ class SteamAPI:
     def _normalize_game_payload(cls, app_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         details_state = payload.get("details_state") or ""
         header_image = payload.get("header_image") or payload.get("headerImage") or ""
-        if not header_image and details_state != "missing":
+        name = payload.get("name") or f"Unknown Game ({app_id})"
+        app_id_str = str(app_id or "").strip()
+
+        is_unknown = (
+            not name
+            or name.lower().startswith("unknown game")
+            or details_state == "missing"
+            or app_id_str.startswith("local-save:")
+            or app_id_str.startswith("local:")
+        )
+
+        if is_unknown:
+            header_image = ""
+        elif not header_image and details_state != "missing":
             header_image = cls.header_image_for_appid(app_id)
         return {
-            "name": payload.get("name") or f"Unknown Game ({app_id})",
+            "name": name,
             "appid": str(payload.get("appid") or app_id),
             "developers": payload.get("developers") or [],
             "publishers": payload.get("publishers") or [],

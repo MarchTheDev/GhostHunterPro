@@ -40,8 +40,8 @@ class UnifiedSearch:
         (r"{APPDATA}\Godot\app_userdata\{GAME}", "Save Files", "Save folder"),
     )
 
-    def __init__(self, steam_api: Any, installed_catalog: dict[str, dict[str, Any]]) -> None:
-        self.steam, self.catalog = steam_api, installed_catalog
+    def __init__(self, steam_api: Any, installed_catalog: dict[str, dict[str, Any]], state_store: Any = None) -> None:
+        self.steam, self.catalog, self.state = steam_api, installed_catalog, state_store
         # This scan used to run once per game card, which made Library loading
         # progressively slower. Build the AppID index once per Library/Home run.
         self.leftover_index = ScanEngine.build_library_index()
@@ -359,6 +359,16 @@ class UnifiedSearch:
     def library_games(self) -> dict[str, dict[str, Any]]:
         # No arbitrary save-folder discovery: only store manifests, AppID traces, and curated games.
         games = {str(appid): dict(item) for appid, item in self.catalog.items()}
+        if getattr(self, "state", None):
+            for appid, custom_game in self.state.custom_library_games().items():
+                key = str(appid)
+                # Never clobber a real detected/installed game with a custom
+                # record: the scanner's entry has trusted paths and sources.
+                if key in games:
+                    continue
+                record = dict(custom_game)
+                record["is_custom"] = True
+                games[key] = record
         # Candidate folders are accepted only after an exact Steam-title match.
         for appid, candidate in self.validated_candidates.items():
             games.setdefault(appid, candidate)
@@ -393,6 +403,7 @@ class UnifiedSearch:
             details = self.steam.get_many_app_details(unknown_ids, timeout=3)
         except Exception:
             details = {}
+        overrides = self.state.game_overrides() if getattr(self, "state", None) else {}
         items = []
         for appid, game in games.items():
             game = {**game, **(details.get(str(appid)) or {}), "appid": str(appid)}
@@ -414,17 +425,40 @@ class UnifiedSearch:
                 try: fresh_cover = self.steam.igdb_cover_for_name(name, timeout=3)
                 except Exception: fresh_cover = ""
             header = str(fresh_cover or cached_cover or self.CURATED_HEADERS.get(str(appid), "") or game.get("header_image") or meta.get("header_image") or "")
-            if not header and str(appid).isdigit():
+            if not header and str(appid).isdigit() and not is_unresolved:
                 try:
                     details = self.steam.get_app_details(str(appid), timeout=3) or {}
                     header = str(details.get("header_image") or "")
                 except Exception: pass
-            if not header and str(appid).isdigit(): header = self.steam.header_image_for_appid(str(appid))
-            if not header: header = placeholder_header_image(name, "Game data")
+            if not header and str(appid).isdigit() and not is_unresolved: header = self.steam.header_image_for_appid(str(appid))
+            if not header and not is_unresolved: header = placeholder_header_image(name, "Game data")
+            if is_unresolved: header = ""
+
+            override = overrides.get(str(appid)) or overrides.get(str(game.get('appid')))
+            if override:
+                name = override.get('name') or name
+                appid = override.get('appid') or appid
+                if override.get('header_image'):
+                    header = override.get('header_image')
+
             # Installed manifests already carry their source. Re-probing Steam,
             # Epic and GOG for every Library card was another avoidable slowdown.
             sources = game.get("sources") or []
-            items.append({"is_unknown": is_unresolved, "appid": str(appid), "name": name, "developers": meta.get("developers", game.get("developers", [])), "publishers": meta.get("publishers", game.get("publishers", [])), "header_image": header, "short_description": meta.get("short_description", game.get("short_description", f"Detected game data for AppID {appid}.")), "paths": paths, "path_count": len(paths), "total_size": sum(path.get("size", 0) for path in paths), "archived": str(appid) in hidden, "hidden": str(appid) in hidden, "installed_sources": sources, "installed": bool(sources), "has_leftovers": bool(paths)})
+            is_custom = bool(game.get("is_custom"))
+            if is_custom:
+                # Custom records keep their stored paths (e.g. a user-supplied
+                # custom folder) merged with anything the scanner finds live.
+                stored_paths = list(game.get("paths") or [])
+                seen_keys = {self._key(path) for path in paths}
+                for path in stored_paths:
+                    if self._key(path) not in seen_keys:
+                        paths.append(path)
+                        seen_keys.add(self._key(path))
+                # A custom card is never proof of a store install.
+                sources = []
+                if not header:
+                    header = str(game.get("header_image") or "")
+            items.append({"is_unknown": is_unresolved, "is_custom": is_custom, "appid": str(appid), "name": name, "developers": meta.get("developers", game.get("developers", [])), "publishers": meta.get("publishers", game.get("publishers", [])), "header_image": header, "short_description": meta.get("short_description", game.get("short_description", f"Detected game data for AppID {appid}.")), "paths": paths, "path_count": len(paths), "total_size": sum(path.get("size", 0) for path in paths), "archived": str(appid) in hidden, "hidden": str(appid) in hidden, "installed_sources": sources, "installed": bool(sources), "has_leftovers": bool(paths)})
         # A GSE folder may be indexed under its raw shortened ID and its
         # corrected trailing-zero AppID. If the corrected ID resolved to a
         # real game, hide the duplicate unknown card for the exact same path.

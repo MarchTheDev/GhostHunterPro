@@ -1453,6 +1453,21 @@
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 12%, transparent) inset, 0 0 18px var(--glow-cyan);
     }
 
+    /* Accent buttons styled like the active library filter chip. */
+    .btn.accent {
+      background: linear-gradient(90deg, var(--surface-cyan), var(--surface-purple));
+      border: 1px solid color-mix(in srgb, var(--cyan) 22%, var(--purple) 10%);
+      color: #f2fbff;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 12%, transparent) inset, 0 0 18px var(--glow-cyan);
+    }
+    .btn.accent:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--surface-cyan) 88%, white), color-mix(in srgb, var(--surface-purple) 88%, white)); }
+    body[data-theme-mode="light"] .btn.accent {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 16%, #fff), color-mix(in srgb, var(--purple) 12%, #fff));
+      border-color: color-mix(in srgb, var(--cyan) 30%, #a8b7ca);
+      color: #17243a;
+      box-shadow: 0 0 14px color-mix(in srgb, var(--cyan) 18%, transparent);
+    }
+
     .btn.good {
       background: rgba(35, 199, 110, .16);
       border-color: rgba(35,199,110,.22);
@@ -2438,6 +2453,15 @@
     .edit-game-field { display:grid; gap:6px; margin:12px 0; color:var(--muted); font-size:12px; font-weight:800; } .edit-game-field input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid rgba(135,157,190,.3); border-radius:10px; color:var(--text); background:rgba(4,12,24,.5); font:inherit; }
     .edit-game-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
     body[data-theme-mode="light"] .edit-game-overlay { background:rgba(232,241,250,.68); }
+    .edit-game-overlay.opening { animation: fadeSoftIn .18s ease-out; }
+    .edit-game-overlay.opening .edit-game-dialog { animation: tvOpen .24s ease-out; }
+    .edit-game-overlay.closing { animation: overlayFadeOut .18s ease-in forwards; }
+    .edit-game-overlay.closing .edit-game-dialog { animation: tvClose .18s ease-in forwards; }
+    .add-lib-card { padding:16px; background:rgba(4,12,24,.3); }
+    .add-lib-input { padding:10px 12px; border:1px solid rgba(135,157,190,.3); border-radius:10px; color:var(--text); background:rgba(4,12,24,.5); font:inherit; }
+    body[data-theme-mode="light"] .add-lib-card { background:rgba(255,255,255,.62); border-color:rgba(74,101,137,.2); }
+    body[data-theme-mode="light"] .add-lib-card h4 { color:#17243a; }
+    body[data-theme-mode="light"] .add-lib-input { background:rgba(255,255,255,.88); color:#17243a; border-color:rgba(74,101,137,.28); }
     body[data-theme-mode="light"] .edit-game-dialog { background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 8%,#fff),color-mix(in srgb,var(--purple) 5%,#fff)); border-color:color-mix(in srgb,var(--cyan) 28%,#a8b7ca); box-shadow:0 24px 60px rgba(30,55,85,.2); }
     body[data-theme-mode="light"] .edit-game-dialog h3 { color:#17243a; }
     body[data-theme-mode="light"] .edit-game-dialog p, body[data-theme-mode="light"] .edit-game-field { color:#52627a; }
@@ -2603,6 +2627,49 @@
       background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 74%, black), color-mix(in srgb, var(--cyan) 56%, black));
       border-color: color-mix(in srgb, var(--cyan) 18%, white 6%);
       box-shadow: 0 0 14px var(--glow-cyan), 0 10px 18px rgba(0,0,0,.24);
+    }
+
+    .remove-fab {
+      position: absolute;
+      top: 8px;
+      right: 48px;
+      z-index: 4;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 11px;
+      background: linear-gradient(180deg, #a3273a, #7c1c2c);
+      color: #ffe9ec;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 14px rgba(230, 60, 90, .35), 0 10px 18px rgba(0,0,0,.24);
+      transition: .18s ease;
+      opacity: 0;
+      transform: translateY(-4px) scale(.96);
+      pointer-events: none;
+      padding: 0;
+    }
+
+    .game-card:hover .remove-fab,
+    .game-card:focus-within .remove-fab,
+    .remove-fab:hover,
+    .remove-fab:focus-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .remove-fab:hover { filter: brightness(1.15); }
+
+    .remove-fab svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .select-fab {
@@ -3002,7 +3069,7 @@
       border: 1px solid rgba(255,255,255,.08);
       color: var(--text);
       box-shadow: var(--shadow);
-      z-index: 60;
+      z-index: 200;
       opacity: 0;
       pointer-events: none;
       transition: .18s ease;
@@ -3176,6 +3243,9 @@
       sourceMenuOpen: false,
       selectedLibraryAppIds: [],
       libraryShowScrollTop: false,
+      addLibraryModalOpen: false,
+      addLibraryQuery: '',
+      addLibrarySuggestions: [],
       settingsInfo: null,
       settingsTab: 'about',
       updateInfo: null,
@@ -3323,11 +3393,19 @@
       return `${value.toFixed(1)} ${units[idx]}`;
     }
 
-    function toast(message) {
+    function toast(message, options = {}) {
       $toast.textContent = message;
       $toast.classList.add('show');
       clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => $toast.classList.remove('show'), 2200);
+      // A sticky toast stays visible until the next toast() or hideToast().
+      if (!options.sticky) {
+        toast._timer = setTimeout(() => $toast.classList.remove('show'), 2200);
+      }
+    }
+
+    function hideToast() {
+      clearTimeout(toast._timer);
+      $toast.classList.remove('show');
     }
 
     function restoreHomeInputFocus(caretPos = null) {
@@ -3714,13 +3792,16 @@
 
     function scheduleCustomThemeColorSave(color) {
       clearTimeout(customThemeSaveTimer);
-      customThemeSaveTimer = setTimeout(() => {
-        setCustomThemeColor(color, {
+      customThemeSaveTimer = setTimeout(async () => {
+        await setCustomThemeColor(color, {
           color2: state.settingsInfo && state.settingsInfo.custom_theme_color_2,
           useSecond: state.settingsInfo && state.settingsInfo.custom_theme_use_second_color,
           render: false,
           refreshEditor: false,
         });
+        // Keep the currently loaded preset in sync with main-bar edits so
+        // re-selecting it later does not restore stale colors.
+        autoSavePresetColors();
       }, 260);
     }
 
@@ -3826,6 +3907,15 @@
       applyTheme(state.settingsInfo && state.settingsInfo.theme ? state.settingsInfo.theme : 'neon');
       applyFont(state.settingsInfo && state.settingsInfo.font ? state.settingsInfo.font : 'inter');
       applyFontSize(state.settingsInfo && state.settingsInfo.font_size ? state.settingsInfo.font_size : 100);
+      applyThemeMode(state.settingsInfo && state.settingsInfo.theme_mode ? state.settingsInfo.theme_mode : 'system');
+    }
+
+    function applyThemeMode(mode) {
+      if (mode === 'dark' || mode === 'light') {
+        document.body.dataset.themeMode = mode;
+      } else {
+        document.body.removeAttribute('data-theme-mode');
+      }
     }
 
     function applyVersionLabels() {
@@ -3989,7 +4079,166 @@
       `;
     }
 
-    function renderEditGameDialog() { let root=document.getElementById('edit-game-overlay'); if(!state.editingLibraryGameId){if(root)root.remove();return;} const item=state.libraryItems.find(x=>String(x.appid)===String(state.editingLibraryGameId)); if(!item)return; if(!root){root=document.createElement('div');root.id='edit-game-overlay';root.className='edit-game-overlay';document.body.appendChild(root);} root.innerHTML=`<div class="edit-game-dialog"><h3>Edit Game Details</h3><p>Enter a Steam AppID to automatically refresh the official game name and cover. Name and cover are optional personal display overrides.</p><label class="edit-game-field">STEAM APPID <span id="edit-appid-status"></span><input id="edit-game-appid" data-edit-appid value="${escapeHtml(item.appid)}" placeholder="Enter AppID for auto-refresh"></label><label class="edit-game-field">GAME NAME <span style="font-weight:500;opacity:.72">(optional override)</span><input id="edit-game-name" value="${escapeHtml(item.name)}"></label><label class="edit-game-field">COVER IMAGE URL <span style="font-weight:500;opacity:.72">(optional override)</span><input id="edit-game-image" value="${escapeHtml(item.header_image||'')}"></label><div class="edit-game-actions"><button class="btn" data-action="close-edit-game">Cancel</button><button class="btn primary" data-action="save-edit-game">Save Changes</button></div></div>`; }
+    function closeOverlayAnimated(root) {
+      // Play the TV-off animation, then remove the node.
+      if (!root || root.classList.contains('closing')) return;
+      root.classList.remove('opening');
+      root.classList.add('closing');
+      setTimeout(() => root.remove(), 190);
+    }
+
+    function renderEditGameDialog() {
+      let root = document.getElementById('edit-game-overlay');
+      if (!state.editingLibraryGameId) {
+        closeOverlayAnimated(root);
+        return;
+      }
+      const item = state.libraryItems.find(x => String(x.appid) === String(state.editingLibraryGameId));
+      if (!item) return;
+      if (root && root.classList.contains('closing')) { root.remove(); root = null; }
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'edit-game-overlay';
+        root.className = 'edit-game-overlay opening';
+        document.body.appendChild(root);
+        setTimeout(() => root && root.classList.remove('opening'), 320);
+      }
+      root.innerHTML = `
+        <div class="edit-game-dialog">
+          <h3>Edit Game Details</h3>
+          <p>Enter a Steam AppID to automatically recognize and refresh the official game name and cover. Name and cover are optional personal display overrides.</p>
+          <label class="edit-game-field">STEAM APPID <span id="edit-appid-status" style="color:var(--cyan);font-weight:600;"></span>
+            <div style="display:flex;gap:8px;">
+              <input id="edit-game-appid" data-edit-appid value="${escapeHtml(item.appid)}" placeholder="Enter AppID for auto-refresh" style="flex:1;" />
+              <button class="btn" data-action="fetch-edit-steam" style="padding:8px 12px;font-size:12px;">Fetch ID</button>
+            </div>
+          </label>
+          <label class="edit-game-field">GAME NAME<input id="edit-game-name" value="${escapeHtml(item.name)}"></label>
+          <label class="edit-game-field">COVER IMAGE URL<input id="edit-game-image" value="${escapeHtml(item.header_image||'')}"></label>
+          <div class="edit-game-actions">
+            <button class="btn" data-action="close-edit-game">Cancel</button>
+            <button class="btn accent" data-action="save-edit-game">Save Changes</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function addLibrarySuggestionsHtml() {
+      if (!state.addLibrarySuggestions.length) return '';
+      return `
+        <div class="suggestions" id="add-library-suggestions-box" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:120;">
+          ${state.addLibrarySuggestions.map(item => `
+            <button class="suggestion" type="button" tabindex="-1" data-action="pick-add-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+              ${item.tiny_image ? `<img src="${escapeHtml(item.tiny_image)}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" /><div class="fallback" style="display:none">${icon('ghost')}</div>` : `<div class="fallback">${icon('ghost')}</div>`}
+              <div>
+                <div class="suggestion-title">${escapeHtml(item.name)}</div>
+                <div class="suggestion-sub">AppID: ${escapeHtml(item.id)}</div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderAddLibrarySuggestionsOnly() {
+      // Update just the dropdown; never rebuild the dialog while typing,
+      // otherwise the input loses focus and the whole panel flashes.
+      const wrap = document.getElementById('add-library-suggestions-wrap');
+      if (wrap) wrap.innerHTML = addLibrarySuggestionsHtml();
+    }
+
+    function renderAddLibraryDialog() {
+      let root = document.getElementById('add-library-overlay');
+      if (!state.addLibraryModalOpen) {
+        closeOverlayAnimated(root);
+        return;
+      }
+      if (root && root.classList.contains('closing')) { root.remove(); root = null; }
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'add-library-overlay';
+        root.className = 'edit-game-overlay opening';
+        document.body.appendChild(root);
+        // Drop the opening class once the animation is done so later
+        // re-renders don't replay the TV-on effect.
+        setTimeout(() => root && root.classList.remove('opening'), 320);
+      }
+      root.innerHTML = `
+        <div class="edit-game-dialog" style="width:min(580px,100%);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="margin:0;">Add Game to Library</h3>
+            <button class="btn" data-action="close-add-library" style="padding:4px 8px;font-size:12px;">${icon('x')}</button>
+          </div>
+          <p style="margin:0 0 16px;color:var(--muted);font-size:13px;">Search for any Steam game with autocomplete suggestions or add a custom game record with save file scan or a custom path override.</p>
+          
+          <div class="card add-lib-card" style="margin-bottom:16px;position:relative;z-index:5;overflow:visible;">
+            <h4 style="margin:0 0 8px;color:var(--text);font-size:14px;display:flex;align-items:center;gap:6px;">${icon('search')} Option 1: Search Game by Name or AppID</h4>
+            <div style="position:relative;">
+              <div style="display:flex;gap:8px;">
+                <input id="add-library-search-input" class="add-lib-input" value="${escapeHtml(state.addLibraryQuery)}" placeholder="Search game name or AppID..." autocomplete="off" style="flex:1;" />
+                <button class="btn accent" data-action="add-library-search-submit">Scan & Add</button>
+              </div>
+              <div id="add-library-suggestions-wrap">${addLibrarySuggestionsHtml()}</div>
+            </div>
+          </div>
+
+          <div class="card add-lib-card">
+            <h4 style="margin:0 0 8px;color:var(--text);font-size:14px;display:flex;align-items:center;gap:6px;">${icon('folder')} Option 2: Add Custom Game & Path</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <label class="edit-game-field" style="margin:0;">APP ID<div style="display:flex;gap:8px;"><input id="add-library-custom-appid" placeholder="e.g. 1177980" style="flex:1;min-width:0;" /><button class="btn" data-action="fetch-custom-appid" style="padding:8px 12px;font-size:12px;white-space:nowrap;">Fetch ID</button></div></label>
+              <label class="edit-game-field" style="margin:0;">GAME NAME<input id="add-library-custom-name" placeholder="Game Name" /></label>
+            </div>
+            <label class="edit-game-field" style="margin:0 0 10px;">COVER IMAGE URL<input id="add-library-custom-image" placeholder="https://..." /></label>
+            <label class="edit-game-field" style="margin:0 0 14px;">CUSTOM PATH<input id="add-library-custom-path" placeholder="C:\\Users\\...\\Documents\\My Games" /></label>
+            <div style="display:flex;justify-content:flex-end;">
+              <button class="btn accent" data-action="submit-custom-game">Add Custom Record</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sortLibraryItems() {
+      // Mirror the backend order: visible first, unknowns last, then A-Z.
+      state.libraryItems.sort((a, b) => {
+        const arch = (a.archived ? 1 : 0) - (b.archived ? 1 : 0);
+        if (arch) return arch;
+        const unk = (a.is_unknown ? 1 : 0) - (b.is_unknown ? 1 : 0);
+        if (unk) return unk;
+        return String(a.name || '').toLowerCase().localeCompare(String(b.name || '').toLowerCase());
+      });
+    }
+
+    function insertLibraryItem(game) {
+      // Add or update a single card in place; never trigger a full rescan.
+      if (!game || !game.appid) return;
+      const record = {
+        is_unknown: false,
+        is_custom: game.is_custom !== false,
+        appid: String(game.appid),
+        name: game.name || `Game (${game.appid})`,
+        developers: game.developers || [],
+        publishers: game.publishers || [],
+        header_image: game.header_image || '',
+        short_description: game.short_description || '',
+        paths: game.paths || [],
+        path_count: game.path_count != null ? game.path_count : (game.paths || []).length,
+        total_size: game.total_size || 0,
+        archived: false,
+        hidden: false,
+        installed_sources: game.sources || game.installed_sources || [],
+        installed: game.installed !== false,
+        has_leftovers: !!(game.has_leftovers || (game.paths || []).length),
+      };
+      const idx = state.libraryItems.findIndex(item => String(item.appid) === record.appid);
+      if (idx >= 0) state.libraryItems[idx] = { ...state.libraryItems[idx], ...record };
+      else state.libraryItems.push(record);
+      sortLibraryItems();
+      if (state.activeTab === 'library') {
+        renderLibrary();
+        renderTabs();
+      }
+    }
 
     function renderLibrary() {
       syncSelectedLibraryIds();
@@ -4032,6 +4281,7 @@
                 <button class="select-fab ${isLibrarySelected(item.appid) ? 'active' : ''}" title="${isLibrarySelected(item.appid) ? 'Deselect this game' : 'Select this game'}" data-action="toggle-select-game" data-appid="${escapeHtml(item.appid)}">${isLibrarySelected(item.appid)
                   ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 16.5 19 7.5"></path></svg>`
                   : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>`}</button>
+                ${item.is_custom ? `<button class="remove-fab" title="Remove this manually added game from the library" data-action="remove-custom-game" data-appid="${escapeHtml(item.appid)}" data-name="${escapeHtml(item.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M4 6h16"></path><path d="M6 6l1 14h10l1-14"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></button>` : ''}
                 <button class="archive-fab ${item.archived ? 'restore' : 'archive'}" title="${item.archived ? 'Show this game' : 'Hide this game'}" data-action="toggle-archive" data-appid="${escapeHtml(item.appid)}" data-archived="${item.archived ? '1' : '0'}">${item.archived
                   ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
                   : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg>`}</button>
@@ -4070,6 +4320,7 @@
               <button class="btn filter ${state.libraryFilter === 'hidden' ? 'active' : ''}" data-action="library-filter" data-filter="hidden"><span class="inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg></span>Hidden (${state.libraryFilter === 'hidden' ? filtered.length : state.libraryItems.filter(item => item.archived && (() => { const chosen=state.librarySourceFilter||[]; const sources=(item.installed_sources||[]).map(x=>String(x).toLowerCase()); return !chosen.length || (chosen.includes('local')&&!sources.length) || sources.some(x=>chosen.includes(x)); })()).length})</button>
               <details id="library-source-menu" class="source-menu" ${state.sourceMenuOpen ? 'open' : ''}><summary class="btn filter">${(state.librarySourceFilter || []).length ? `Sources (${state.librarySourceFilter.length})` : 'All Sources'}</summary><div class="source-menu-panel"><button class="source-choice ${(state.librarySourceFilter || []).length ? '' : 'active'}" data-action="clear-library-sources"><span class="source-check">${(state.librarySourceFilter || []).length ? '' : '✓'}</span>All Sources</button>${[['local','Local'],['steam','Steam'],['epic','Epic Games'],['gog','GOG']].map(([id,label])=>`<button class="source-choice ${(state.librarySourceFilter||[]).includes(id)?'active':''}" data-action="toggle-library-source" data-source="${id}"><span class="source-check">${(state.librarySourceFilter||[]).includes(id)?'✓':''}</span>${label}</button>`).join('')}</div></details>
               <button class="btn ${getFilteredLibraryItems().length && getFilteredLibraryItems().every(item=>isLibrarySelected(item.appid))?'select-all-active':''}" data-action="library-select-all">${getFilteredLibraryItems().length && getFilteredLibraryItems().every(item=>isLibrarySelected(item.appid))?'Deselect All':'Select All'}</button>
+              <button class="btn accent" data-action="open-add-library">${icon('plus')} Add to Library</button>
               <button class="btn bulk" data-action="library-delete-selected" ${bulkCount ? '' : 'disabled'}>${icon('sparkles')} Delete Selected (${bulkCount})</button>
               <button class="btn" data-action="library-rescan" ${state.libraryLoading ? 'disabled' : ''}>${icon('rotate')} Rescan</button>
             </div>
@@ -4120,7 +4371,7 @@
               return `<div class="preset-card ${isEditing ? 'expanded' : ''} ${isActive ? 'selected' : ''}" style="--preset-color:${escapeHtml(preset.color)};--preset-color2:${escapeHtml(preset.color2 || preset.color)}" data-preset-card="${escapeHtml(preset.name)}" draggable="true" data-drag-preset="${escapeHtml(preset.name)}">
                 <button class="theme-card-main" data-action="select-preset" data-color="${escapeHtml(preset.color)}" data-color2="${escapeHtml(preset.color2 || '#fb7185')}" data-use-second="${preset.use_second ? '1' : '0'}" data-preset-name="${escapeHtml(preset.name)}">
                   <div class="preset-card-preview"></div>
-                  <div class="preset-card-name" style="padding-right:4px;display:flex;align-items:center;justify-content:space-between;">${escapeHtml(preset.name)}${isActive ? '<span style="color:var(--cyan);font-size:16px;flex-shrink:0;">●</span>' : ''}</div>
+                  <div class="preset-card-name" style="padding-right:4px;display:flex;align-items:center;justify-content:space-between;">${escapeHtml(preset.name)}<span class="preset-active-dot" data-preset-dot-name="${escapeHtml(preset.name)}" style="color:var(--cyan);font-size:16px;flex-shrink:0;${isActive ? '' : 'display:none;'}">●</span></div>
                 </button>
                 <button class="preset-rename" data-action="toggle-edit-preset" data-preset-name="${escapeHtml(preset.name)}" title="Edit preset"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg></button>
                 <button class="preset-delete" data-action="delete-theme-preset" data-preset-name="${escapeHtml(preset.name)}" title="Delete preset">${icon('x')}</button>
@@ -4163,8 +4414,9 @@
       const presets = $customTheme.querySelectorAll('[data-preset-card]');
       presets.forEach(card => {
         const name = card.dataset.presetCard || '';
-        const isActive = state.loadedPresetName && name.toLowerCase() === state.loadedPresetName.toLowerCase();
-        card.classList.toggle('active', isActive);
+        const isActive = !!(state.loadedPresetName && name.toLowerCase() === state.loadedPresetName.toLowerCase());
+        // Cards are rendered with the 'selected' class, not 'active'.
+        card.classList.toggle('selected', isActive);
         const isEditing = state.editingPresetName && name.toLowerCase() === state.editingPresetName.toLowerCase();
         card.classList.toggle('expanded', isEditing);
       });
@@ -4328,7 +4580,7 @@
           </div>
           <div class="selection-actions">
             <button class="btn" disabled>Total size: ${formatSize(items.reduce((sum, item) => sum + Number(item.total_size || 0), 0))}</button>
-            <button class="btn primary" data-action="selection-delete-all">Delete All Selected</button>
+            <button class="btn accent" data-action="selection-delete-all">Delete All Selected</button>
             <button class="btn" data-action="selection-clear-all">Clear Selection</button>
           </div>
           ${items.map(item => `
@@ -4451,7 +4703,7 @@
               </div>
               <div class="modal-actions">
                 <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}">Open on SteamDB</button>
-                <button class="btn primary" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
+                <button class="btn accent" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
                 <button class="btn" data-action="modal-delete-selected" data-appid="${escapeHtml(game.appid)}">Delete Selected</button>
                 <button class="btn" data-action="backup-game" data-appid="${escapeHtml(game.appid)}">Backup All</button><button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Show this Game' : 'Hide this Game'}</button>
               </div>
@@ -4667,6 +4919,7 @@
       renderConfirm();
       renderPresetDialog();
       renderUpdateNotice();
+      renderAddLibraryDialog();
     }
 
     async function refreshLibrary(options = {}) {
@@ -4782,8 +5035,29 @@
       const t = event.target;
       if (t.type === 'color' && t.closest('#custom-theme-overlay')) {
         colorPickerOpen = false;
+        openColorPickerEl = null;
       }
     });
+
+    // Toggle behavior for the native color picker: the OS popup cannot be
+    // closed by script, but a second click on the same swatch is intercepted
+    // so the picker does not immediately re-open — which reads as "close".
+    let openColorPickerEl = null;
+    document.addEventListener('click', event => {
+      const t = event.target;
+      if (t instanceof HTMLElement && t.matches('input[type="color"]') && t.closest('#custom-theme-overlay')) {
+        if (openColorPickerEl === t) {
+          event.preventDefault();
+          openColorPickerEl = null;
+          colorPickerOpen = false;
+        } else {
+          openColorPickerEl = t;
+        }
+        return;
+      }
+      // Any other click means the native popup has been dismissed.
+      openColorPickerEl = null;
+    }, true);
 
     document.addEventListener('click', event => {
       const menu = document.getElementById('library-source-menu');
@@ -4913,6 +5187,21 @@
     document.addEventListener('keydown', async event => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+      // Enter saves in the "Save Theme" name dialog.
+      if (event.key === 'Enter' && target.id === 'preset-name-input') {
+        event.preventDefault();
+        const saveBtn = document.querySelector('[data-action="preset-save-confirm"]');
+        if (saveBtn) saveBtn.click();
+        return;
+      }
+      // Enter saves while editing a saved theme's name.
+      if (event.key === 'Enter' && target.classList.contains('preset-edit-name-input')) {
+        event.preventDefault();
+        const card = target.closest('[data-preset-card]');
+        const saveBtn = card ? card.querySelector('[data-action="save-edit-preset"]') : null;
+        if (saveBtn) saveBtn.click();
+        return;
+      }
       if (target.dataset.action === 'preset-rename-input') {
         // Prevent space from triggering the parent button click
         if (event.key === ' ') {
@@ -4950,6 +5239,31 @@
     document.addEventListener('mousemove', event => { if(!libraryDragStart)return; if(!libraryDragSelecting && Math.hypot(event.clientX-libraryDragStart.x,event.clientY-libraryDragStart.y)>7){libraryDragSelecting=true; libraryDragMode=isLibrarySelected(libraryDragStart.card.dataset.libraryAppid)?'deselect':'select'; applyDragCard(libraryDragStart.card);} if(libraryDragSelecting){const card=event.target.closest && event.target.closest('.game-card[data-library-appid]');if(card)applyDragCard(card);} });
     document.addEventListener('mouseup', () => { libraryDragSelecting=false; libraryDragStart=null; libraryDragVisited.clear(); });
 
+    document.addEventListener('input', async event => {
+      const target = event.target;
+      if (!target) return;
+      if (target.id === 'add-library-search-input') {
+        const raw = target.value;
+        state.addLibraryQuery = raw;
+        const clean = raw.trim();
+        if (clean.length < 2) {
+          state.addLibrarySuggestions = [];
+          renderAddLibrarySuggestionsOnly();
+          return;
+        }
+        try {
+          const suggestions = await apiCall('search_suggestions', clean);
+          const liveInput = document.getElementById('add-library-search-input');
+          if (!liveInput || liveInput.value !== raw) return;
+          state.addLibrarySuggestions = Array.isArray(suggestions) ? suggestions.slice(0, 6) : [];
+          renderAddLibrarySuggestionsOnly();
+        } catch {
+          state.addLibrarySuggestions = [];
+          renderAddLibrarySuggestionsOnly();
+        }
+      }
+    });
+
     document.addEventListener('click', async event => {
       const clickedInsideSearch = event.target.closest('.search-wrap');
       if (!clickedInsideSearch && state.homeSuggestions.length) {
@@ -4963,6 +5277,15 @@
         }
         if (event.target === $confirm) {
           settleConfirm(false);
+        }
+        // Click on the dimmed backdrop closes these dialogs too.
+        if (event.target.id === 'edit-game-overlay') {
+          state.editingLibraryGameId = null;
+          renderEditGameDialog();
+        }
+        if (event.target.id === 'add-library-overlay') {
+          state.addLibraryModalOpen = false;
+          renderAddLibraryDialog();
         }
         if (event.target === $selection) {
           state.bulkReviewOpen = false;
@@ -5016,7 +5339,193 @@
           break;
         case 'edit-library-game': { state.editingLibraryGameId=String(actionEl.dataset.appid); renderEditGameDialog(); break; }
         case 'close-edit-game': { state.editingLibraryGameId=null; renderEditGameDialog(); break; }
-        case 'save-edit-game': { const item=state.libraryItems.find(x=>String(x.appid)===String(state.editingLibraryGameId)); if(!item)break; const oldId=String(item.appid), name=document.getElementById('edit-game-name').value.trim(), appid=document.getElementById('edit-game-appid').value.trim(), image=document.getElementById('edit-game-image').value.trim(); if(name)item.name=name; if(appid)item.appid=appid; if(image)item.header_image=image; state.selectedLibraryAppIds=state.selectedLibraryAppIds.map(x=>x===oldId?String(item.appid):x); state.editingLibraryGameId=null; renderEditGameDialog(); renderLibrary(); renderTabs(); break; }
+        case 'fetch-edit-steam': {
+          const appidInput = document.getElementById('edit-game-appid');
+          const statusEl = document.getElementById('edit-appid-status');
+          const val = appidInput ? appidInput.value.trim() : '';
+          if (!val || !/^\d+$/.test(val)) {
+            if (statusEl) statusEl.textContent = '(Enter numeric Steam AppID)';
+            toast('Enter a numeric Steam AppID');
+            break;
+          }
+          if (statusEl) statusEl.textContent = '(Fetching game info...)';
+          const res = await apiCall('preview_game_appid', val);
+          if (!res.ok) {
+            if (statusEl) statusEl.textContent = '(Not found on Steam)';
+            toast(res.error || 'Steam lookup failed');
+            break;
+          }
+          const game = res.game || {};
+          const nameInput = document.getElementById('edit-game-name');
+          const imageInput = document.getElementById('edit-game-image');
+          if (nameInput && game.name) nameInput.value = game.name;
+          if (imageInput && game.header_image) imageInput.value = game.header_image;
+          if (statusEl) statusEl.textContent = '✓ Game info loaded';
+          toast('Steam game recognized successfully!');
+          break;
+        }
+        case 'save-edit-game': {
+          const item = state.libraryItems.find(x => String(x.appid) === String(state.editingLibraryGameId));
+          if (!item) break;
+          const oldId = String(item.appid);
+          const name = document.getElementById('edit-game-name').value.trim();
+          const appid = document.getElementById('edit-game-appid').value.trim();
+          const image = document.getElementById('edit-game-image').value.trim();
+          if (appid && appid !== oldId && state.libraryItems.some(x => String(x.appid) === appid)) {
+            toast(`AppID ${appid} is already used by another game in your library`);
+            break;
+          }
+          const res = await apiCall('edit_game_details', oldId, appid || oldId, name, image);
+          if (!res.ok) {
+            toast(res.error || 'Failed to save changes');
+            break;
+          }
+          // Apply the override in place: no full library refresh.
+          if (name) item.name = name;
+          if (appid) item.appid = appid;
+          if (image) item.header_image = image;
+          state.selectedLibraryAppIds = state.selectedLibraryAppIds.map(x => x === oldId ? String(item.appid) : x);
+          state.editingLibraryGameId = null;
+          renderEditGameDialog();
+          sortLibraryItems();
+          renderLibrary();
+          renderTabs();
+          toast('Game details updated & cached');
+          break;
+        }
+        case 'remove-custom-game': {
+          const appid = String(actionEl.dataset.appid || '');
+          const name = actionEl.dataset.name || appid;
+          const confirmed = await showConfirm({
+            title: 'Remove game from library',
+            message: `Remove "${name}" from the library? This only removes the manually added entry — no files on disk are touched.`,
+            confirmText: 'Remove',
+          });
+          if (!confirmed) break;
+          const res = await apiCall('remove_custom_library_game', appid);
+          if (!res.ok) {
+            toast(res.error || 'Failed to remove game');
+            break;
+          }
+          state.libraryItems = state.libraryItems.filter(item => String(item.appid) !== appid);
+          state.selectedLibraryAppIds = state.selectedLibraryAppIds.filter(x => x !== appid);
+          renderLibrary();
+          renderTabs();
+          toast(`Removed "${name}" from library`);
+          break;
+        }
+        case 'open-add-library':
+          state.addLibraryModalOpen = true;
+          state.addLibraryQuery = '';
+          state.addLibrarySuggestions = [];
+          renderAddLibraryDialog();
+          break;
+        case 'close-add-library':
+          state.addLibraryModalOpen = false;
+          renderAddLibraryDialog();
+          break;
+        case 'pick-add-suggestion': {
+          const query = actionEl.dataset.name || actionEl.dataset.appid || '';
+          state.addLibraryQuery = query;
+          state.addLibrarySuggestions = [];
+          // Patch input + dropdown in place; a full re-render would flash the dialog.
+          const searchInput = document.getElementById('add-library-search-input');
+          if (searchInput) searchInput.value = query;
+          renderAddLibrarySuggestionsOnly();
+          break;
+        }
+        case 'add-library-search-submit': {
+          const query = state.addLibraryQuery.trim();
+          if (!query) { toast('Enter a game name or AppID'); break; }
+          toast('Searching and scanning files...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('add_library_search_game', query);
+          } catch (err) {
+            hideToast();
+            toast('Search failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'Game not found');
+            break;
+          }
+          if (res.no_leftovers) {
+            toast('No leftovers were found for that game');
+          } else {
+            toast(`Added "${res.game.name}" to Library!`);
+          }
+          // Keep the dialog open so more games can be added in a row;
+          // just clear the search field for the next query (patch in place
+          // so Option 2 fields are untouched and nothing flashes).
+          state.addLibraryQuery = '';
+          state.addLibrarySuggestions = [];
+          const submitSearchInput = document.getElementById('add-library-search-input');
+          if (submitSearchInput) submitSearchInput.value = '';
+          renderAddLibrarySuggestionsOnly();
+          insertLibraryItem(res.game);
+          break;
+        }
+        case 'fetch-custom-appid': {
+          const appidInput = document.getElementById('add-library-custom-appid');
+          const val = appidInput ? appidInput.value.trim() : '';
+          if (!val || !/^\d+$/.test(val)) {
+            toast('Enter a numeric AppID first');
+            break;
+          }
+          toast('Fetching game info...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('preview_game_appid', val);
+          } catch (err) {
+            hideToast();
+            toast('Lookup failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'No game found for this AppID');
+            break;
+          }
+          const game = res.game || {};
+          const nameInput = document.getElementById('add-library-custom-name');
+          const imageInput = document.getElementById('add-library-custom-image');
+          if (nameInput && game.name) nameInput.value = game.name;
+          if (imageInput && game.header_image) imageInput.value = game.header_image;
+          toast(`Recognized "${game.name || val}"`);
+          break;
+        }
+        case 'submit-custom-game': {
+          const appid = document.getElementById('add-library-custom-appid').value.trim();
+          const name = document.getElementById('add-library-custom-name').value.trim();
+          const image = document.getElementById('add-library-custom-image').value.trim();
+          const path = document.getElementById('add-library-custom-path').value.trim();
+          if (!name && !appid) { toast('Game name or AppID is required'); break; }
+          toast('Adding game and scanning files...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('add_custom_library_game', appid, name || appid, image, path);
+          } catch (err) {
+            hideToast();
+            toast('Adding failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'Failed to add custom game');
+            break;
+          }
+          if (res.no_leftovers) {
+            toast('No leftovers were found for that game');
+          } else {
+            toast('Custom game added to library!');
+          }
+          // Keep the dialog open; just clear the custom fields for the next entry.
+          for (const id of ['add-library-custom-appid', 'add-library-custom-name', 'add-library-custom-image', 'add-library-custom-path']) {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          }
+          insertLibraryItem(res.game);
+          break;
+        }
         case 'toggle-select-game':
           toggleLibrarySelection(actionEl.dataset.appid || '');
           renderLibrary();
@@ -5152,9 +5661,10 @@
           }
           state.renamingPreset = null;
           state.renamingPresetValue = '';
-          const lc1 = normalizeHexColor(actionEl.dataset.color || '#d946ef');
-          const lc2 = normalizeHexColor(actionEl.dataset.color2 || '#fb7185');
-          const lus = actionEl.dataset.useSecond === '1';
+          const lPreset = ((state.settingsInfo && state.settingsInfo.custom_theme_presets) || []).find(p => p.name.toLowerCase() === String(pName || '').toLowerCase());
+          const lc1 = normalizeHexColor((lPreset && lPreset.color) || actionEl.dataset.color || '#d946ef');
+          const lc2 = normalizeHexColor((lPreset && lPreset.color2) || actionEl.dataset.color2 || '#fb7185');
+          const lus = lPreset ? !!lPreset.use_second : actionEl.dataset.useSecond === '1';
           if (!state.settingsInfo) state.settingsInfo = {};
           state.settingsInfo.custom_theme_color = lc1;
           state.settingsInfo.custom_theme_color_2 = lc2;
@@ -5190,8 +5700,12 @@
           actionEl.textContent = nv ? 'Second Color: On' : 'Second Color: Off';
           // Enable/disable second color inputs
           document.querySelectorAll('[data-action="custom-theme-color2-input"], [data-action="custom-theme-hex2-input"]').forEach(i => { i.disabled = !nv; });
-          // Persist silently
-          setTimeout(() => { try { apiCall('set_custom_theme_color', state.settingsInfo.custom_theme_color || '#d946ef', state.settingsInfo.custom_theme_color_2 || '#fb7185', nv); } catch {} }, 0);
+          // Persist silently, then sync the loaded preset so re-selecting
+          // it does not restore a stale second-color state.
+          setTimeout(async () => {
+            try { await apiCall('set_custom_theme_color', state.settingsInfo.custom_theme_color || '#d946ef', state.settingsInfo.custom_theme_color_2 || '#fb7185', nv); } catch {}
+            autoSavePresetColors();
+          }, 0);
           break;
         }
         case 'start-edit-preset':
@@ -5258,6 +5772,9 @@
           applyTheme('custom');
           try { await apiCall('set_custom_theme_color', c1, c2, useS); } catch {}
           colorPickerOpen = false;
+          // Blur so renderCustomThemeEditor does a full rebuild: the
+          // lightweight focused-element path would keep showing the old name.
+          if (document.activeElement) document.activeElement.blur();
           renderCustomThemeEditor();
           toast('Preset saved');
           break;
@@ -5268,9 +5785,12 @@
             state.loadedPresetName = null;
           } else {
             state.loadedPresetName = spName;
-            const c1 = normalizeHexColor(actionEl.dataset.color || '#d946ef');
-            const c2 = normalizeHexColor(actionEl.dataset.color2 || '#fb7185');
-            const us = actionEl.dataset.useSecond === '1';
+            // Prefer live state over DOM dataset: lightweight updates leave
+            // the card's data-* attributes stale after main-bar edits.
+            const livePreset = ((state.settingsInfo && state.settingsInfo.custom_theme_presets) || []).find(p => p.name.toLowerCase() === spName.toLowerCase());
+            const c1 = normalizeHexColor((livePreset && livePreset.color) || actionEl.dataset.color || '#d946ef');
+            const c2 = normalizeHexColor((livePreset && livePreset.color2) || actionEl.dataset.color2 || '#fb7185');
+            const us = livePreset ? !!livePreset.use_second : actionEl.dataset.useSecond === '1';
             if (!state.settingsInfo) state.settingsInfo = {};
             state.settingsInfo.custom_theme_color = c1;
             state.settingsInfo.custom_theme_color_2 = c2;
@@ -5340,11 +5860,7 @@
           const mode = actionEl.dataset.mode || 'system';
           if (!state.settingsInfo) state.settingsInfo = {};
           state.settingsInfo.theme_mode = mode;
-          if (mode === 'system') {
-            document.body.removeAttribute('data-theme-mode');
-          } else {
-            document.body.dataset.themeMode = mode;
-          }
+          applyThemeMode(mode);
           // Persist
           apiCall('set_theme_mode', mode).catch(() => {});
           renderSettings();
