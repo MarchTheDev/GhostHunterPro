@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 APP_NAME = "Ghost Hunter Pro"
-APP_VERSION = "3.1"
+APP_VERSION = "3.2"
 APP_CREATOR = "TheMarch88"
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
 
@@ -42,11 +42,10 @@ PORTABLE_MODE = _is_portable_mode()
 LOCALAPPDATA_BASE = os.environ.get("LOCALAPPDATA")
 ROAMINGAPPDATA_BASE = os.environ.get("APPDATA")
 
-if PORTABLE_MODE:
-    DATA_DIR = RUN_DIR / ".ghosthunter_data"
-else:
-    APPDATA_BASE = LOCALAPPDATA_BASE or ROAMINGAPPDATA_BASE or str(RUN_DIR)
-    DATA_DIR = Path(APPDATA_BASE) / "GhostHunterPro"
+# Keep state in the user profile rather than creating .ghosthunter_data next
+# to a downloaded/source copy of the app.
+APPDATA_BASE = ROAMINGAPPDATA_BASE or LOCALAPPDATA_BASE or str(RUN_DIR)
+DATA_DIR = Path(APPDATA_BASE) / "GhostHunterPro"
 
 LEGACY_DATA_DIR = (Path(ROAMINGAPPDATA_BASE) / "GhostHunterPro") if ROAMINGAPPDATA_BASE else None
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -62,6 +61,7 @@ STATE_FILE = DATA_DIR / "ghosthunter_state.json"
 STEAM_CACHE_FILE = DATA_DIR / "ghosthunter_appcache.json"
 PCGW_CACHE_FILE = DATA_DIR / "ghosthunter_pcgw_cache.json"
 LOG_FILE = DATA_DIR / "ghosthunter_debug.log"
+IGDB_CACHE_FILE = DATA_DIR / "ghosthunter_igdb_cache.json"
 
 LEGACY_STATE_FILE = Path.home() / ".ghost_hunter_state.json"
 LEGACY_STEAM_CACHE_FILE = Path.home() / ".ghost_hunter_steam_cache.json"
@@ -93,6 +93,7 @@ UPDATE_CHECK_URL = (
 
 DEFAULT_STATE = {
     "archived_appids": [],
+    "excluded_games": {},
     "search_history": [],
     "theme": "neon",
     "font": "inter",
@@ -100,4 +101,5 @@ DEFAULT_STATE = {
     "custom_theme_color_2": "#fb7185",
     "custom_theme_use_second_color": False,
     "custom_theme_presets": [],
+    "font_size": 100,
 }

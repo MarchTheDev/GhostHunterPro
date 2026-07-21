@@ -86,7 +86,7 @@
     }
 
     @font-face {
-      font-family: 'GH Fraktur';
+      font-family: 'GH Franktur';
       font-style: normal;
       font-weight: 400 700;
       font-display: swap;
@@ -179,30 +179,164 @@
       cursor: pointer;
       transition: .16s ease;
     }
+    .preset-card[draggable="true"] {
+      cursor: grab;
+    }
+    .preset-card[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    .preset-card.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .preset-card.drag-over {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px var(--glow-cyan);
+      transform: scale(1.02);
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+    .preset-card.drag-over::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--cyan);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--cyan);
+    }
 
     .preset-card:hover {
       transform: translateY(-1px);
       border-color: color-mix(in srgb, var(--cyan) 20%, transparent);
       box-shadow: 0 0 16px var(--glow-cyan);
     }
+    .preset-card.selected {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px var(--glow-cyan), 0 0 40px var(--glow-purple), inset 0 0 12px var(--glow-cyan);
+    }
+    body[data-theme-mode="light"] .preset-card.selected {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 40%, transparent), 0 0 32px color-mix(in srgb, var(--purple) 20%, transparent);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 8%, white), color-mix(in srgb, var(--purple) 5%, white));
+    }
 
     .preset-card-preview {
-      height: 54px;
-      border-radius: 12px;
-      margin-bottom: 9px;
-      border: 1px solid rgba(255,255,255,.07);
+      height: 48px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border: none;
       background: linear-gradient(135deg, #0a1322, var(--preset-color), var(--preset-color2, color-mix(in srgb, var(--preset-color) 65%, #fb7185)));
     }
 
     .preset-card-name {
       font-size: 13px;
       font-weight: 900;
-      padding-right: 32px;
+      padding-right: 58px;
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      min-height: 20px;
+    }
+
+    .inline-editor-section {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+      display: grid;
+      gap: 12px;
+    }
+
+    .preset-card.expanded {
+      border-color: color-mix(in srgb, var(--cyan) 25%, transparent);
+      z-index: 2;
+      box-shadow: 0 0 20px var(--glow-cyan);
+      background: rgba(255,255,255,.05);
+    }
+
+    .preset-edit-body {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+
+    .preset-card.expanded .preset-edit-body {
+      display: grid;
+      gap: 8px;
+    }
+
+    .preset-card.expanded {
+      border-color: color-mix(in srgb, var(--cyan) 25%, transparent);
+      box-shadow: 0 0 16px var(--glow-cyan);
+    }
+
+    .preset-edit-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .preset-edit-name-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 34px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      background: rgba(0,0,0,.2);
+      color: var(--text);
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .preset-edit-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .preset-edit-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .14s ease;
+    }
+
+    .preset-edit-btn.save {
+      background: rgba(34,199,110,.18);
+      border-color: rgba(34,199,110,.28);
+      color: #c3ffdb;
+    }
+
+    .preset-edit-btn.save:hover {
+      background: rgba(34,199,110,.3);
+    }
+
+    .preset-edit-btn.cancel {
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+
+    .preset-edit-btn.cancel:hover {
+      background: rgba(255,255,255,.1);
+      color: var(--text);
     }
 
     .preset-card .theme-card-main {
       min-height: 0;
       display: block;
+      padding-bottom: 2px;
     }
 
     .preset-delete {
@@ -211,13 +345,92 @@
       top: 8px;
       width: 25px;
       height: 25px;
-      border: 1px solid rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.18);
       border-radius: 9px;
-      background: rgba(255,91,87,.16);
+      background: rgba(7,11,20,.85);
       color: #ffd8d6;
       display: grid;
       place-items: center;
       cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+      backdrop-filter: blur(6px);
+      transition: .14s ease;
+    }
+
+    .preset-delete:hover {
+      background: rgba(255,91,87,.45);
+      border-color: rgba(255,91,87,.4);
+    }
+
+    .preset-select {
+      position: absolute;
+      right: 68px;
+      top: 8px;
+      width: 25px;
+      height: 25px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 9px;
+      background: rgba(7,11,20,.85);
+      color: #cdd8ec;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+      backdrop-filter: blur(6px);
+      transition: .14s ease;
+    }
+    .preset-select:hover {
+      background: rgba(255,255,255,.2);
+      color: #fff;
+    }
+    .preset-select.active {
+      background: rgba(34,199,110,.2);
+      border-color: rgba(34,199,110,.3);
+      color: #c3ffdb;
+    }
+
+    .preset-rename {
+      position: absolute;
+      right: 38px;
+      top: 8px;
+      width: 25px;
+      height: 25px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 9px;
+      background: rgba(7,11,20,.85);
+      color: #cdd8ec;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+      backdrop-filter: blur(6px);
+      transition: .14s ease;
+    }
+
+    .preset-rename:hover {
+      background: rgba(255,255,255,.2);
+      color: #fff;
+    }
+
+    .preset-card-name-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-right: 58px;
+    }
+
+    .preset-rename-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 28px;
+      border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+      border-radius: 8px;
+      background: rgba(0,0,0,.3);
+      color: var(--text);
+      padding: 0 8px;
+      font-size: 13px;
+      font-weight: 900;
+      outline: none;
     }
 
     .custom-edit-btn {
@@ -296,9 +509,6 @@
     }
 
     .custom-theme-modal-head {
-      position: sticky;
-      top: 0;
-      z-index: 2;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -306,7 +516,6 @@
       padding: 18px;
       border-bottom: 1px solid rgba(255,255,255,.06);
       background: linear-gradient(180deg, rgba(11,16,28,.98), rgba(11,16,28,.92));
-      backdrop-filter: blur(12px);
     }
 
     .custom-theme-modal-body {
@@ -320,15 +529,80 @@
       height: 124px;
       min-height: 124px;
       border-radius: 18px;
-      border: 1px solid color-mix(in srgb, var(--cyan) 20%, rgba(255,255,255,.08));
+      border: none;
       background:
         radial-gradient(circle at 18% 26%, color-mix(in srgb, var(--custom-accent, #d946ef) 48%, transparent), transparent 34%),
         linear-gradient(135deg, #0a1322, var(--custom-accent, #d946ef) 58%, var(--custom-shade-accent, var(--custom-accent-2, #fb7185)));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 0 30px var(--glow-cyan);
+      box-shadow: 0 0 30px var(--glow-cyan);
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; }
+
+    .font-size-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+    }
+
+    .font-size-slider-wrap label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    .font-size-slider {
+      flex: 1 1 auto;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 30%, transparent), color-mix(in srgb, var(--purple) 30%, transparent));
+      outline: none;
+      cursor: pointer;
+    }
+
+    .font-size-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      border: 2px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 12px var(--glow-cyan);
+      cursor: pointer;
+      transition: box-shadow .15s ease;
+    }
+
+    .font-size-slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 20px var(--glow-cyan);
+    }
+
+    .font-size-slider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      border: 2px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 12px var(--glow-cyan);
+      cursor: pointer;
+    }
+
+    .font-size-value {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text);
+      min-width: 46px;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
 
     button,
     input,
@@ -424,6 +698,284 @@
         linear-gradient(180deg, #120b0c 0%, #0c0b13 100%);
     }
 
+    /* Theme mode: Dark / Light / System */
+    body[data-theme-mode="light"] {
+      --bg: #f0f2f7;
+      --panel: rgba(255, 255, 255, 0.95);
+      --panel-2: rgba(245, 247, 250, 0.96);
+      --border: rgba(0,0,0,0.1);
+      --text: #2d3748;
+      --muted: #4b5563;
+      --shadow: 0 4px 20px rgba(0,0,0,.06);
+      color-scheme: light;
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, var(--cyan) 5%, white), transparent 70%),
+        radial-gradient(700px 500px at 50% 20%, color-mix(in srgb, var(--purple) 3%, white), transparent 75%),
+        linear-gradient(180deg, #e8ecf3 0%, #f0f2f7 100%);
+    }
+    body[data-theme-mode="light"]::before {
+      background-image:
+        linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+    }
+    body[data-theme-mode="light"] .card,
+    body[data-theme-mode="light"] .settings-card,
+    body[data-theme-mode="light"] .settings-panel,
+    body[data-theme-mode="light"] .modal-card,
+    body[data-theme-mode="light"] .custom-theme-modal-card,
+    body[data-theme-mode="light"] .confirm-card,
+    body[data-theme-mode="light"] .selection-card {
+      background: rgba(255,255,255,.96);
+      border-color: rgba(0,0,0,.08);
+    }
+    body[data-theme-mode="light"] .btn {
+      border-color: rgba(0,0,0,.1);
+      background: rgba(255,255,255,.8);
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .btn.primary {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 60%, white), color-mix(in srgb, var(--purple) 60%, white));
+      color: #fff;
+    }
+    body[data-theme-mode="light"] .settings-hero {
+      background:
+        radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--cyan) 8%, white), transparent 45%),
+        linear-gradient(135deg, rgba(255,255,255,.6), rgba(255,255,255,.3));
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .settings-kicker { color: var(--cyan); }
+    body[data-theme-mode="light"] .brand-title,
+    body[data-theme-mode="light"] .hero h1 span.grad {
+      background: linear-gradient(90deg, var(--cyan), var(--brand-mid) 55%, var(--brand-end) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+    body[data-theme-mode="light"] .settings-hero-title,
+    body[data-theme-mode="light"] .settings-panel-title,
+    body[data-theme-mode="light"] .brand-title,
+    body[data-theme-mode="light"] .game-title,
+    body[data-theme-mode="light"] .result-title,
+    body[data-theme-mode="light"] .modal-title,
+    body[data-theme-mode="light"] .selection-title,
+    body[data-theme-mode="light"] h1, body[data-theme-mode="light"] h2, body[data-theme-mode="light"] h3,
+    body[data-theme-mode="light"] .settings-section-title,
+    body[data-theme-mode="light"] .settings-value,
+    body[data-theme-mode="light"] .font-card .theme-card-title,
+    body[data-theme-mode="light"] .theme-card-title {
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .settings-panel-sub,
+    body[data-theme-mode="light"] .settings-hero-sub,
+    body[data-theme-mode="light"] .brand-sub,
+    body[data-theme-mode="light"] .game-sub,
+    body[data-theme-mode="light"] .selection-sub,
+    body[data-theme-mode="light"] .settings-sub,
+    body[data-theme-mode="light"] .theme-card-sub,
+    body[data-theme-mode="light"] .font-card .theme-card-sub,
+    body[data-theme-mode="light"] .library-sub,
+    body[data-theme-mode="light"] .settings-label { color: #4b5563; }
+    body[data-theme-mode="light"] .tab { color: #6b7280; }
+    body[data-theme-mode="light"] .tab.active {
+      color: #2d3748;
+      background: rgba(0,0,0,.05);
+    }
+    body[data-theme-mode="light"] .tab.home-nav,
+    body[data-theme-mode="light"] .tab.settings-nav {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 12%, white), color-mix(in srgb, var(--purple) 10%, white));
+      border-color: rgba(0,0,0,.06);
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .library-pill {
+      background: rgba(255,255,255,.8);
+      border-color: rgba(0,0,0,.08);
+    }
+    body[data-theme-mode="light"] .search-inline {
+      background: rgba(255,255,255,.5);
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .search-shell {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 18%, rgba(255,255,255,.7)), color-mix(in srgb, var(--purple) 14%, rgba(255,255,255,.7)));
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .search-inner {
+      background: rgba(255,255,255,.75);
+    }
+    body[data-theme-mode="light"] .toolbar {
+      background: none;
+      border: none;
+      box-shadow: none;
+    }
+    body[data-theme-mode="light"] .search-inline {
+      background: rgba(255,255,255,.45);
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .hero h1 span.grad {
+      background: linear-gradient(90deg, var(--cyan), var(--brand-mid) 55%, var(--brand-end) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+    body[data-theme-mode="light"] .history-card {
+      border-color: color-mix(in srgb, var(--cyan) 12%, rgba(0,0,0,.08));
+    }
+    body[data-theme-mode="light"] .path-section { border-color: rgba(0,0,0,.06); background: rgba(0,0,0,.01); }
+    body[data-theme-mode="light"] .path-section-head { background: rgba(0,0,0,.03); color: #2d3748; }
+    body[data-theme-mode="light"] .modal-overlay { background: rgba(0,0,0,.3); }
+    body[data-theme-mode="light"] .game-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(240,242,248,.94));
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .status-badge {
+      background: linear-gradient(90deg, rgba(200,30,40,.9), rgba(160,25,35,.9));
+    }
+    body[data-theme-mode="light"] .mini-badge {
+      color: #2d3748;
+      background: rgba(0,0,0,.05);
+    }
+    body[data-theme-mode="light"] .mini-badge.legit {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 15%, white), color-mix(in srgb, var(--purple) 12%, white));
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .tag { color: #2d3748; background: rgba(0,0,0,.05); }
+    body[data-theme-mode="light"] .tag.legit {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 15%, white), color-mix(in srgb, var(--purple) 12%, white));
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .preset-card { background: rgba(0,0,0,.02); border-color: rgba(0,0,0,.08); }
+    body[data-theme-mode="light"] .toast { background: rgba(255,255,255,.95); border-color: rgba(0,0,0,.1); color: #2d3748; }
+    body[data-theme-mode="light"] .update-notice { background: rgba(255,255,255,.96); border-color: rgba(0,0,0,.1); }
+    body[data-theme-mode="light"] .update-notice-title { color: #2d3748; }
+    body[data-theme-mode="light"] .settings-note { background: rgba(0,0,0,.02); border-color: rgba(0,0,0,.06); color: #4b5563; }
+    body[data-theme-mode="light"] .settings-version-pill {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 15%, white), color-mix(in srgb, var(--purple) 12%, white));
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] input[type="color"] { background: rgba(255,255,255,.9); border-color: rgba(0,0,0,.12); }
+    body[data-theme-mode="light"] .hex-input { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.1); color: #2d3748; }
+    body[data-theme-mode="light"] .font-preview { background: linear-gradient(135deg, rgba(240,242,248,.96), rgba(230,233,240,.94)); color: #2d3748; border-color: rgba(0,0,0,.06); }
+    body[data-theme-mode="light"] .theme-preview { border-color: rgba(0,0,0,.08); }
+    body[data-theme-mode="light"] .settings-tab { color: #6b7280; }
+    body[data-theme-mode="light"] .settings-tab.active { color: #2d3748; }
+    body[data-theme-mode="light"] .settings-tabs { background: rgba(0,0,0,.04); }
+    body[data-theme-mode="light"] .settings-grid .settings-item { background: rgba(0,0,0,.02); }
+    body[data-theme-mode="light"] .scroll-top-btn { background: rgba(255,255,255,.9); color: #2d3748; border-color: rgba(0,0,0,.1); }
+    body[data-theme-mode="light"] .btn.hero-link {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 20%, white), color-mix(in srgb, var(--purple) 18%, white));
+      color: #2d3748;
+      border-color: rgba(0,0,0,.08);
+    }
+    body[data-theme-mode="light"] .btn.filter { color: #2d3748; background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.08); }
+    body[data-theme-mode="light"] .btn.filter.active {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 15%, white), color-mix(in srgb, var(--purple) 12%, white));
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .btn.bulk {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 15%, white), color-mix(in srgb, var(--purple) 12%, white));
+      color: #2d3748;
+    }
+    body[data-theme-mode="light"] .modal-top {
+      background: rgba(255,255,255,.96);
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .modal-title { color: #2d3748; }
+    body[data-theme-mode="light"] .modal-close { background: rgba(0,0,0,.05); color: #2d3748; }
+    body[data-theme-mode="light"] .tiny-btn { background: rgba(0,0,0,.04); color: #2d3748; border-color: rgba(0,0,0,.1); }
+    body[data-theme-mode="light"] .tiny-btn.danger { background: rgba(200,30,40,.08); color: #c01c28; border-color: rgba(200,30,40,.2); }
+    body[data-theme-mode="light"] .font-card { background: rgba(0,0,0,.02); border-color: rgba(0,0,0,.08); }
+    body[data-theme-mode="light"] .font-card.active {
+      border-color: color-mix(in srgb, var(--cyan) 20%, rgba(0,0,0,.08));
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 8%, white), color-mix(in srgb, var(--purple) 6%, white));
+    }
+    body[data-theme-mode="light"] .theme-card { background: rgba(0,0,0,.02); border-color: rgba(0,0,0,.08); }
+    body[data-theme-mode="light"] .theme-card.active {
+      border-color: color-mix(in srgb, var(--cyan) 20%, rgba(0,0,0,.08));
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 8%, white), color-mix(in srgb, var(--purple) 6%, white));
+    }
+    body[data-theme-mode="light"] .archive-fab,
+    body[data-theme-mode="light"] .select-fab {
+      background: rgba(255,255,255,.9);
+      color: #2d3748;
+      border-color: rgba(0,0,0,.12);
+    }
+    body[data-theme-mode="light"] .custom-theme-modal-head {
+      background: rgba(255,255,255,.96);
+      border-color: rgba(0,0,0,.06);
+    }
+    body[data-theme-mode="light"] .settings-tab { color: #6b7280; }
+    body[data-theme-mode="light"] .settings-tab.active { color: #2d3748; }
+    body[data-theme-mode="light"] .second-color-toggle { color: #6b7280; background: rgba(0,0,0,.04); }
+    body[data-theme-mode="light"] .second-color-toggle.active { color: #2d3748; }
+    body[data-theme-mode="light"] .preset-edit-btn { color: #2d3748; }
+    body[data-theme-mode="light"] .preset-edit-btn.save { color: #15803d; background: rgba(34,199,110,.08); }
+    body[data-theme-mode="light"] .preset-rename,
+    body[data-theme-mode="light"] .preset-delete,
+    body[data-theme-mode="light"] .preset-select {
+      background: rgba(255,255,255,.85);
+      color: #2d3748;
+      border-color: rgba(0,0,0,.12);
+    }
+    /* Fix specific themes in light mode */
+    body[data-theme-mode="light"][data-theme="emerald"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, #0a3025 14%, white), transparent 70%),
+        linear-gradient(180deg, #d0e8dc 0%, #daeee4 100%);
+    }
+    body[data-theme-mode="light"][data-theme="ember"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, #ffb26b 6%, white), transparent 70%),
+        linear-gradient(180deg, #f7f0eb 0%, #f5f2ef 100%);
+    }
+    body[data-theme-mode="light"][data-theme="midnight"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, #7bd7ff 5%, white), transparent 70%),
+        linear-gradient(180deg, #eaf0f8 0%, #f0f4f9 100%);
+    }
+    body[data-theme-mode="light"][data-theme="rubellite"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, #ff4b75 5%, white), transparent 70%),
+        linear-gradient(180deg, #f5eaed 0%, #f7f0f2 100%);
+    }
+    body[data-theme-mode="light"][data-theme="neon"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, #1ac7ff 5%, white), transparent 70%),
+        linear-gradient(180deg, #eaf0f8 0%, #f0f4f9 100%);
+    }
+    body[data-theme-mode="light"][data-theme="custom"] {
+      background:
+        radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, var(--custom-accent, #d946ef) 5%, white), transparent 70%),
+        linear-gradient(180deg, #f0edf5 0%, #f4f2f7 100%);
+    }
+    /* Path rows in light mode */
+    body[data-theme-mode="light"] .path-row { border-color: rgba(0,0,0,.04); }
+    body[data-theme-mode="light"] .path-code { color: var(--cyan); }
+    body[data-theme-mode="light"] .path-desc { color: #6b7280; }
+    /* Hunt button contrast */
+    body[data-theme-mode="light"] .btn.primary.pill {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 55%, white), color-mix(in srgb, var(--purple) 55%, white));
+      color: #fff;
+    }
+    /* Recent Hunts text */
+    body[data-theme-mode="light"] .history-title { color: #2d3748; }
+    body[data-theme-mode="light"] .history-clear { color: #6b7280; }
+    body[data-theme-mode="light"] .history-pill {
+      background: rgba(0,0,0,.03);
+      border-color: rgba(0,0,0,.06);
+      color: #2d3748;
+    }
+    /* Home title gradient in light mode */
+    body[data-theme-mode="light"] .hero h1 span.grad {
+      background: linear-gradient(90deg, var(--cyan), var(--brand-mid) 55%, var(--brand-end) 100%);
+    }
+    /* Hero text in light mode */
+    body[data-theme-mode="light"] .hero p { color: #4b5563; }
+    /* Color picker light mode */
+    body[data-theme-mode="light"] input[type="color"] {
+      background: rgba(255,255,255,.95);
+      border-color: rgba(0,0,0,.15);
+      color-scheme: light;
+    }
+
     body[data-font="inter"] {
       --app-font-stack: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
     }
@@ -455,7 +1007,7 @@
     }
 
     body[data-font="fraktur"] {
-      --app-font-stack: "GH Fraktur", "UnifrakturMaguntia", "Old English Text MT", serif;
+      --app-font-stack: "GH Franktur", "UnifrakturMaguntia", "Old English Text MT", serif;
     }
 
     body[data-font="roboto-slab"] {
@@ -901,6 +1453,21 @@
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 12%, transparent) inset, 0 0 18px var(--glow-cyan);
     }
 
+    /* Accent buttons styled like the active library filter chip. */
+    .btn.accent {
+      background: linear-gradient(90deg, var(--surface-cyan), var(--surface-purple));
+      border: 1px solid color-mix(in srgb, var(--cyan) 22%, var(--purple) 10%);
+      color: #f2fbff;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 12%, transparent) inset, 0 0 18px var(--glow-cyan);
+    }
+    .btn.accent:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--surface-cyan) 88%, white), color-mix(in srgb, var(--surface-purple) 88%, white)); }
+    body[data-theme-mode="light"] .btn.accent {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 16%, #fff), color-mix(in srgb, var(--purple) 12%, #fff));
+      border-color: color-mix(in srgb, var(--cyan) 30%, #a8b7ca);
+      color: #17243a;
+      box-shadow: 0 0 14px color-mix(in srgb, var(--cyan) 18%, transparent);
+    }
+
     .btn.good {
       background: rgba(35, 199, 110, .16);
       border-color: rgba(35,199,110,.22);
@@ -1140,7 +1707,7 @@
     .path-code {
       display: block;
       margin-top: 6px;
-      color: #b7eaff;
+      color: var(--cyan);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
       word-break: break-all;
@@ -1419,9 +1986,14 @@
     }
 
     .theme-card.active {
-      border-color: color-mix(in srgb, var(--cyan) 18%, transparent);
-      box-shadow: 0 0 20px var(--glow-cyan);
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px var(--glow-cyan), 0 0 40px var(--glow-purple), inset 0 0 12px var(--glow-cyan);
       background: linear-gradient(90deg, color-mix(in srgb, var(--surface-cyan) 65%, transparent), color-mix(in srgb, var(--surface-purple) 60%, transparent));
+    }
+    body[data-theme-mode="light"] .theme-card.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 40%, transparent), 0 0 32px color-mix(in srgb, var(--purple) 20%, transparent);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 8%, white), color-mix(in srgb, var(--purple) 5%, white));
     }
 
     .theme-card:hover {
@@ -1440,17 +2012,14 @@
       align-self: stretch;
       border-radius: 12px;
       margin-bottom: 12px;
-      border: 1px solid rgba(255,255,255,.08);
+      border: none;
       flex: 0 0 76px;
       box-sizing: border-box;
       overflow: hidden;
-      background-clip: padding-box;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.035);
     }
 
     .theme-preview.neon {
       background: linear-gradient(135deg, #0a1322, #11172a 55%, #2f1d49);
-      box-shadow: inset 0 0 0 1px rgba(26,199,255,.08);
     }
 
     .theme-preview.midnight {
@@ -1495,7 +2064,6 @@
       background: rgba(255,255,255,.03);
       display: grid;
       gap: 12px;
-      animation: fadeSoftIn .16s ease-out;
     }
 
     .custom-theme-row {
@@ -1505,14 +2073,47 @@
       flex-wrap: wrap;
     }
 
-    .custom-theme-row input[type="color"] {
-      width: 54px;
-      height: 42px;
-      padding: 2px;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 12px;
-      background: rgba(255,255,255,.06);
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      color-scheme: dark;
+      width: 48px;
+      height: 38px;
+      padding: 4px;
+      border: 2px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      background: rgba(7,11,20,.95);
       cursor: pointer;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    input[type="color"]:hover,
+    input[type="color"]:focus {
+      border-color: color-mix(in srgb, var(--cyan) 40%, transparent);
+      box-shadow: 0 0 14px var(--glow-cyan);
+      outline: none;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border-radius: 6px;
+      border: none;
+    }
+
+    input[type="color"]::-moz-color-swatch {
+      border-radius: 6px;
+      border: none;
+    }
+
+    /* Smaller color inputs inside preset edit mode */
+    .preset-card-name-wrap input[type="color"] {
+      width: 32px;
+      height: 26px;
+      padding: 2px;
+      border-radius: 7px;
     }
 
     .hex-input {
@@ -1532,7 +2133,7 @@
       width: 100%;
       height: 46px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.08);
+      border: none;
       background: linear-gradient(90deg, var(--custom-accent, #d946ef), var(--custom-shade-accent, var(--custom-accent-2, #fb7185)));
       box-shadow: 0 0 18px color-mix(in srgb, var(--custom-accent, #d946ef) 24%, transparent);
     }
@@ -1546,12 +2147,20 @@
       text-align: left;
       cursor: pointer;
       transition: .16s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
     }
 
     .font-card.active {
       border-color: color-mix(in srgb, var(--cyan) 18%, transparent);
       box-shadow: 0 0 20px var(--glow-cyan);
       background: linear-gradient(90deg, color-mix(in srgb, var(--surface-cyan) 65%, transparent), color-mix(in srgb, var(--surface-purple) 60%, transparent));
+    }
+    body[data-theme-mode="light"] .font-card.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 40%, transparent), 0 0 32px color-mix(in srgb, var(--purple) 20%, transparent);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 8%, white), color-mix(in srgb, var(--purple) 5%, white));
     }
 
     .font-card:hover {
@@ -1563,8 +2172,10 @@
       min-height: 74px;
       display: flex;
       align-items: center;
+      justify-content: center;
       padding: 14px;
       margin-bottom: 12px;
+      text-align: center;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.06);
       background: linear-gradient(135deg, rgba(8, 17, 31, .96), rgba(17, 23, 42, .94));
@@ -1609,7 +2220,7 @@
     }
 
     .font-preview.fraktur {
-      font-family: "GH Fraktur", "UnifrakturMaguntia", "Old English Text MT", serif;
+      font-family: "GH Franktur", "UnifrakturMaguntia", "Old English Text MT", serif;
       letter-spacing: .01em;
     }
 
@@ -1806,6 +2417,55 @@
       margin: 8px 2px 18px;
     }
 
+    .select-all-active { border-color:var(--cyan) !important; box-shadow:0 0 18px rgba(93,227,255,.38), inset 0 0 10px rgba(93,227,255,.12); color:var(--text) !important; }
+    .source-menu { position:relative; } .source-menu summary { list-style:none; cursor:pointer; border-radius:12px !important; } .source-menu summary::-webkit-details-marker { display:none; }
+    .source-menu summary.btn { border-color:rgba(106,137,183,.38); background:linear-gradient(135deg,rgba(27,44,72,.94),rgba(17,28,48,.94)); }
+    .source-menu[open] summary.btn { border-color:rgba(93,227,255,.72); box-shadow:0 0 14px rgba(93,227,255,.18); }
+    .source-menu-panel { position:absolute; right:0; bottom:calc(100% - 2px); z-index:999; min-width:190px; padding:7px; border:1px solid rgba(137,174,222,.28); outline:1px solid rgba(93,227,255,.08); border-radius:16px; background:linear-gradient(145deg,rgba(25,43,71,.92),rgba(10,19,34,.94)); backdrop-filter:blur(18px) saturate(135%); box-shadow:0 22px 45px rgba(0,0,0,.44),0 0 24px rgba(56,170,255,.08); }
+    .source-menu-title { padding:4px 7px 8px; color:#8fa5c2; font-size:10px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .source-choice { width:100%; display:flex; align-items:center; gap:10px; padding:10px 9px; border:1px solid transparent; border-radius:10px; color:#d8e4f3; background:transparent; text-align:left; cursor:pointer; font:inherit; transition:background .16s,border-color .16s,transform .16s; } .source-choice:hover { background:rgba(114,166,230,.13); border-color:rgba(123,183,243,.16); transform:translateX(2px); }
+    .source-check { width:18px; height:18px; border:1px solid #7387a4; border-radius:6px; display:grid; place-items:center; color:#06101d; font-size:11px; font-weight:900; transition:.16s; } .source-choice.active { background:linear-gradient(90deg,rgba(61,197,233,.14),rgba(126,109,255,.08)); border-color:rgba(93,227,255,.22); } .source-choice.active .source-check { border-color:var(--cyan); background:linear-gradient(135deg,var(--cyan),var(--purple)); box-shadow:0 0 12px rgba(93,227,255,.5); }
+    /* Theme inheritance overrides for Library source/select controls. */
+    .source-menu summary.btn, .select-all-active { border-color:var(--cyan) !important; color:var(--text) !important; }
+    .source-menu summary.btn { background:linear-gradient(135deg,color-mix(in srgb,var(--cyan) 14%,var(--surface)),color-mix(in srgb,var(--purple) 8%,var(--surface))) !important; }
+    .select-all-active { box-shadow:0 0 18px color-mix(in srgb,var(--cyan) 42%,transparent),inset 0 0 10px color-mix(in srgb,var(--cyan) 13%,transparent) !important; }
+    .source-menu-panel { border-color:color-mix(in srgb,var(--cyan) 27%,rgba(125,151,184,.34)) !important; }
+    .source-choice.active { background:linear-gradient(90deg,color-mix(in srgb,var(--cyan) 17%,transparent),color-mix(in srgb,var(--purple) 10%,transparent)) !important; border-color:color-mix(in srgb,var(--cyan) 26%,transparent) !important; }
+    .source-choice.active .source-check { background:linear-gradient(135deg,var(--cyan),var(--purple)) !important; border-color:var(--cyan) !important; box-shadow:0 0 12px color-mix(in srgb,var(--cyan) 52%,transparent) !important; }
+    .select-fab.active { background:linear-gradient(180deg,color-mix(in srgb,var(--cyan) 88%,#101b2b),color-mix(in srgb,var(--purple) 78%,#101b2b)) !important; border-color:color-mix(in srgb,var(--cyan) 42%,white) !important; box-shadow:0 0 14px color-mix(in srgb,var(--cyan) 44%,transparent) !important; }
+    body[data-theme-mode="light"] .source-menu-panel { background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 8%,#fff),color-mix(in srgb,var(--purple) 5%,#fff)) !important; border-color:color-mix(in srgb,var(--cyan) 30%,#aab8ca) !important; box-shadow:0 15px 30px rgba(26,43,70,.18) !important; }
+    body[data-theme-mode="light"] .source-menu-title { color:#52627a !important; }
+    body[data-theme-mode="light"] .source-choice { color:#1c2940 !important; }
+    body[data-theme-mode="light"] .source-choice.active { color:#10233d !important; }
+    /* Compact, viewport-safe, fully themed Sources popover. */
+    .source-menu-panel { min-width:172px !important; padding:5px !important; max-height:calc(100vh - 16px); overflow-y:auto; background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 12%,var(--surface)),color-mix(in srgb,var(--purple) 9%,var(--surface))) !important; border-color:color-mix(in srgb,var(--cyan) 32%,rgba(125,151,184,.34)) !important; }
+    .source-menu-title { padding:3px 6px 5px !important; color:color-mix(in srgb,var(--cyan) 48%,#aebed4) !important; }
+    .source-choice { padding:7px 8px !important; color:var(--text) !important; }
+    .source-choice.active { background:linear-gradient(90deg,color-mix(in srgb,var(--cyan) 19%,transparent),color-mix(in srgb,var(--purple) 12%,transparent)) !important; border-color:color-mix(in srgb,var(--cyan) 30%,transparent) !important; }
+    .source-choice.active .source-check { background:linear-gradient(135deg,var(--cyan),var(--purple)) !important; border-color:var(--cyan) !important; }
+    body[data-theme-mode="light"] .source-menu-panel { background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 8%,#fff),color-mix(in srgb,var(--purple) 5%,#fff)) !important; }
+    body[data-theme-mode="light"] .source-choice { color:#18263d !important; }
+    .source-menu-panel { right:auto !important; width:172px !important; min-width:172px !important; box-sizing:border-box; }
+    .unknown-games-divider { grid-column:1 / -1; display:flex; align-items:center; gap:12px; margin:28px 0 3px; color:#8e9aae; font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .unknown-games-divider::before { content:""; flex:1; height:1px; background:rgba(150,166,190,.26); }
+    .edit-game-overlay { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:20px; background:rgba(3,8,17,.7); backdrop-filter:blur(8px); }
+    .edit-game-dialog { width:min(480px,100%); border:1px solid color-mix(in srgb,var(--cyan) 28%,rgba(150,166,190,.25)); border-radius:18px; padding:22px; background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 5%,#080f1c),color-mix(in srgb,var(--purple) 4%,#080f1c)); box-shadow:0 25px 65px rgba(0,0,0,.5); }
+    .edit-game-dialog h3 { margin:0 0 6px; color:var(--text); } .edit-game-dialog p { margin:0 0 18px; color:var(--muted); font-size:13px; }
+    .edit-game-field { display:grid; gap:6px; margin:12px 0; color:var(--muted); font-size:12px; font-weight:800; } .edit-game-field input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid rgba(135,157,190,.3); border-radius:10px; color:var(--text); background:rgba(4,12,24,.5); font:inherit; }
+    .edit-game-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
+    body[data-theme-mode="light"] .edit-game-overlay { background:rgba(232,241,250,.68); }
+    .edit-game-overlay.opening { animation: fadeSoftIn .18s ease-out; }
+    .edit-game-overlay.opening .edit-game-dialog { animation: tvOpen .24s ease-out; }
+    .edit-game-overlay.closing { animation: overlayFadeOut .18s ease-in forwards; }
+    .edit-game-overlay.closing .edit-game-dialog { animation: tvClose .18s ease-in forwards; }
+    .add-lib-card { padding:16px; background:rgba(4,12,24,.3); }
+    .add-lib-input { padding:10px 12px; border:1px solid rgba(135,157,190,.3); border-radius:10px; color:var(--text); background:rgba(4,12,24,.5); font:inherit; }
+    body[data-theme-mode="light"] .add-lib-card { background:rgba(255,255,255,.62); border-color:rgba(74,101,137,.2); }
+    body[data-theme-mode="light"] .add-lib-card h4 { color:#17243a; }
+    body[data-theme-mode="light"] .add-lib-input { background:rgba(255,255,255,.88); color:#17243a; border-color:rgba(74,101,137,.28); }
+    body[data-theme-mode="light"] .edit-game-dialog { background:linear-gradient(145deg,color-mix(in srgb,var(--cyan) 8%,#fff),color-mix(in srgb,var(--purple) 5%,#fff)); border-color:color-mix(in srgb,var(--cyan) 28%,#a8b7ca); box-shadow:0 24px 60px rgba(30,55,85,.2); }
+    body[data-theme-mode="light"] .edit-game-dialog h3 { color:#17243a; }
+    body[data-theme-mode="light"] .edit-game-dialog p, body[data-theme-mode="light"] .edit-game-field { color:#52627a; }
+    body[data-theme-mode="light"] .edit-game-field input { color:#17243a; background:rgba(255,255,255,.88); border-color:rgba(74,101,137,.28); }
     .library-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -1969,6 +2629,49 @@
       box-shadow: 0 0 14px var(--glow-cyan), 0 10px 18px rgba(0,0,0,.24);
     }
 
+    .remove-fab {
+      position: absolute;
+      top: 8px;
+      right: 48px;
+      z-index: 4;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 11px;
+      background: linear-gradient(180deg, #a3273a, #7c1c2c);
+      color: #ffe9ec;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 14px rgba(230, 60, 90, .35), 0 10px 18px rgba(0,0,0,.24);
+      transition: .18s ease;
+      opacity: 0;
+      transform: translateY(-4px) scale(.96);
+      pointer-events: none;
+      padding: 0;
+    }
+
+    .game-card:hover .remove-fab,
+    .game-card:focus-within .remove-fab,
+    .remove-fab:hover,
+    .remove-fab:focus-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .remove-fab:hover { filter: brightness(1.15); }
+
+    .remove-fab svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .select-fab {
       position: absolute;
       top: 8px;
@@ -2078,6 +2781,7 @@
     .modal-overlay.show { display: flex; }
 
     #custom-theme-overlay { z-index: 50; }
+    #confirm-overlay { z-index: 80; }
     #preset-overlay { z-index: 70; }
 
 
@@ -2295,11 +2999,7 @@
     }
 
     .modal-top {
-      position: sticky;
-      top: 0;
-      z-index: 2;
       background: linear-gradient(180deg, rgba(11,16,28,.98), rgba(11,16,28,.92));
-      backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255,255,255,.06);
     }
 
@@ -2369,7 +3069,7 @@
       border: 1px solid rgba(255,255,255,.08);
       color: var(--text);
       box-shadow: var(--shadow);
-      z-index: 60;
+      z-index: 200;
       opacity: 0;
       pointer-events: none;
       transition: .18s ease;
@@ -2494,7 +3194,7 @@
         <div class="brand-icon"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 2a8 8 0 0 0-8 8v10l2.4-1.8L8.8 20l2.4-1.8L13.6 20l2.4-1.8L18.4 20V10a8 8 0 0 0-8-8Z"></path></svg></div>
         <div>
           <div class="brand-title">Ghost Hunter Pro</div>
-          <div class="brand-sub"><span id="app-version-label">v3.1</span> • <span class="desktop">Desktop Mode</span></div>
+          <div class="brand-sub"><span id="app-version-label">v3.2</span> • <span class="desktop">Desktop Mode</span></div>
         </div>
       </div>
       <div class="tabs">
@@ -2510,7 +3210,7 @@
     </div>
 
     <footer class="footer">
-      <span id="app-footer-version">Ghost Hunter Pro v3.1</span> • Not affiliated with Valve or Steam<br />
+      <span id="app-footer-version">Ghost Hunter Pro v3.2</span> • Not affiliated with Valve or Steam<br />
       Paths are generated based on common known locations. Always verify before deleting.
     </footer>
   </div>
@@ -2539,8 +3239,13 @@
       libraryItems: [],
       libraryQuery: '',
       libraryFilter: 'visible',
+      librarySourceFilter: [],
+      sourceMenuOpen: false,
       selectedLibraryAppIds: [],
       libraryShowScrollTop: false,
+      addLibraryModalOpen: false,
+      addLibraryQuery: '',
+      addLibrarySuggestions: [],
       settingsInfo: null,
       settingsTab: 'about',
       updateInfo: null,
@@ -2549,17 +3254,25 @@
       bulkReviewOpen: false,
       bulkExpandedAppIds: [],
       modalGameId: null,
+      editingLibraryGameId: null,
       modalClosing: false,
       confirmDialog: null,
       presetDialogOpen: false,
       presetName: '',
+      renamingPreset: null,
+      renamingPresetValue: '',
+      loadedPresetName: null,
+      themeMode: 'system',
+      editingPresetName: null,
       customThemeEditorOpen: false,
       customThemeEditorClosing: false,
     };
 
     let suggestionTimer = null;
     let customThemeSaveTimer = null;
+    let colorPickerOpen = false;
     let confirmResolver = null;
+
 
     const $home = document.getElementById('view-home');
     const $library = document.getElementById('view-library');
@@ -2571,6 +3284,7 @@
     const $customTheme = document.getElementById('custom-theme-overlay');
     const $toast = document.getElementById('toast');
     const $updateNotice = document.getElementById('update-notice-root');
+
 
     const iconPaths = {
       ghost: '<path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 2a8 8 0 0 0-8 8v10l2.4-1.8L8.8 20l2.4-1.8L13.6 20l2.4-1.8L18.4 20V10a8 8 0 0 0-8-8Z"></path>',
@@ -2679,11 +3393,19 @@
       return `${value.toFixed(1)} ${units[idx]}`;
     }
 
-    function toast(message) {
+    function toast(message, options = {}) {
       $toast.textContent = message;
       $toast.classList.add('show');
       clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => $toast.classList.remove('show'), 2200);
+      // A sticky toast stays visible until the next toast() or hideToast().
+      if (!options.sticky) {
+        toast._timer = setTimeout(() => $toast.classList.remove('show'), 2200);
+      }
+    }
+
+    function hideToast() {
+      clearTimeout(toast._timer);
+      $toast.classList.remove('show');
     }
 
     function restoreHomeInputFocus(caretPos = null) {
@@ -2765,6 +3487,8 @@
       return state.libraryItems.filter(item => {
         if (state.libraryFilter === 'visible' && item.archived) return false;
         if (state.libraryFilter === 'hidden' && !item.archived) return false;
+        const chosen = state.librarySourceFilter || []; const sources = (item.installed_sources || []).map(x => String(x).toLowerCase());
+        if (chosen.length && !(chosen.includes('local') && !sources.length) && !sources.some(x => chosen.includes(x))) return false;
         if (!query) return true;
         return item.name.toLowerCase().includes(query) || String(item.appid).includes(query);
       });
@@ -2800,6 +3524,8 @@
         state.selectedLibraryAppIds = [...state.selectedLibraryAppIds, key];
       }
     }
+
+    function toggleSelectAllFiltered() { const ids=getFilteredLibraryItems().map(x=>String(x.appid)); const all=ids.length&&ids.every(id=>state.selectedLibraryAppIds.includes(id)); state.selectedLibraryAppIds=all?state.selectedLibraryAppIds.filter(id=>!ids.includes(id)):[...new Set([...state.selectedLibraryAppIds,...ids])]; }
 
     function selectedLibraryItems() {
       const selected = new Set(state.selectedLibraryAppIds.map(String));
@@ -3014,15 +3740,24 @@
       document.body.dataset.font = fontName || 'inter';
     }
 
+    function applyFontSize(size) {
+      const pct = Math.max(75, Math.min(130, Number(size || 100)));
+      document.body.style.zoom = (pct / 100);
+    }
+
     async function setTheme(themeName) {
-      const response = await apiCall('set_theme', themeName);
-      if (response && response.ok) {
-        if (!state.settingsInfo) state.settingsInfo = {};
-        state.settingsInfo.theme = response.theme;
-        applyTheme(response.theme);
-        renderSettings();
-        renderTabs();
-      }
+      if (!state.settingsInfo) state.settingsInfo = {};
+      state.settingsInfo.theme = themeName;
+      if (themeName !== 'custom') state.loadedPresetName = null;
+      applyTheme(themeName);
+      renderSettings();
+      try {
+        const response = await apiCall('set_theme', themeName);
+        if (response && response.ok) {
+          state.settingsInfo.theme = response.theme;
+          applyTheme(response.theme);
+        }
+      } catch {}
     }
 
     async function setFont(fontName) {
@@ -3032,7 +3767,6 @@
         state.settingsInfo.font = response.font;
         applyFont(response.font);
         renderSettings();
-        renderTabs();
       }
     }
 
@@ -3050,13 +3784,7 @@
         state.settingsInfo.theme = response.theme || 'custom';
         applyCustomThemeColor(response.custom_theme_color, state.settingsInfo.custom_theme_color_2, state.settingsInfo.custom_theme_use_second_color);
         applyTheme(response.theme || 'custom');
-        if (options.render !== false) {
-          renderSettings();
-          renderTabs();
-        }
-        if (options.refreshEditor !== false && state.customThemeEditorOpen) {
-          renderCustomThemeEditor();
-        }
+        // No automatic renders — callers must handle their own.
       } catch (error) {
         toast(error.message || 'Could not set custom color');
       }
@@ -3064,26 +3792,41 @@
 
     function scheduleCustomThemeColorSave(color) {
       clearTimeout(customThemeSaveTimer);
-      customThemeSaveTimer = setTimeout(() => {
-        setCustomThemeColor(color, {
+      customThemeSaveTimer = setTimeout(async () => {
+        await setCustomThemeColor(color, {
           color2: state.settingsInfo && state.settingsInfo.custom_theme_color_2,
           useSecond: state.settingsInfo && state.settingsInfo.custom_theme_use_second_color,
           render: false,
           refreshEditor: false,
         });
+        // Keep the currently loaded preset in sync with main-bar edits so
+        // re-selecting it later does not restore stale colors.
+        autoSavePresetColors();
       }, 260);
     }
 
     async function saveCustomThemePreset(name, color) {
+      const presets = (state.settingsInfo && state.settingsInfo.custom_theme_presets) || [];
+      const cleanName = String(name || '').trim();
+      const exists = presets.some(p => p.name.toLowerCase() === cleanName.toLowerCase());
+      if (exists) {
+        const ok = await showConfirm({
+          title: 'Replace existing preset?',
+          message: `A preset named "${cleanName}" already exists. Do you want to replace it with the current colors?`,
+          confirmText: 'Replace',
+          cancelText: 'Cancel',
+        });
+        if (!ok) return;
+      }
       try {
         const response = await apiCall(
           'save_custom_theme_preset',
-          name,
+          cleanName,
           color,
           state.settingsInfo && state.settingsInfo.custom_theme_color_2 ? state.settingsInfo.custom_theme_color_2 : '#fb7185',
           !!(state.settingsInfo && state.settingsInfo.custom_theme_use_second_color)
         );
-        if (!response.ok) throw new Error(response.error || 'Could not save preset');
+        if (!response.ok) throw new Error(response.error || 'Could not save theme');
         if (!state.settingsInfo) state.settingsInfo = {};
         state.settingsInfo.custom_theme_color = response.custom_theme_color;
         state.settingsInfo.custom_theme_color_2 = response.custom_theme_color_2 || state.settingsInfo.custom_theme_color_2 || '#fb7185';
@@ -3092,13 +3835,50 @@
         state.settingsInfo.theme = response.theme || 'custom';
         state.presetDialogOpen = false;
         state.presetName = '';
+        state.loadedPresetName = cleanName;
         applyCustomThemeColor(response.custom_theme_color, state.settingsInfo.custom_theme_color_2, state.settingsInfo.custom_theme_use_second_color);
-        applyTheme(response.theme || 'custom');
-        renderAll({ refreshCustomThemeEditor: true });
-        toast('Theme preset saved');
+        applyTheme('custom');
+        try { await apiCall('set_custom_theme_color', response.custom_theme_color, state.settingsInfo.custom_theme_color_2 || '#fb7185', !!state.settingsInfo.custom_theme_use_second_color); } catch {}
+        renderPresetDialog();
+        renderCustomThemeEditor();
+        toast(exists ? 'Theme replaced' : 'Theme saved');
       } catch (error) {
-        toast(error.message || 'Could not save preset');
+        toast(error.message || 'Could not save theme');
       }
+    }
+
+    async function renameCustomThemePreset(oldName, newName) {
+      try {
+        const response = await apiCall('rename_custom_theme_preset', oldName, newName);
+        if (!response.ok) throw new Error(response.error || 'Could not rename preset');
+        if (!state.settingsInfo) state.settingsInfo = {};
+        state.settingsInfo.custom_theme_presets = response.custom_theme_presets || [];
+        // Update loaded preset name so auto-save tracks the new name.
+        if (state.loadedPresetName && state.loadedPresetName.toLowerCase() === oldName.toLowerCase()) {
+          state.loadedPresetName = newName;
+        }
+        state.renamingPreset = null;
+        state.renamingPresetValue = '';
+        renderTabs();
+
+        toast('Preset renamed');
+      } catch (error) {
+        toast(error.message || 'Could not rename preset');
+      }
+    }
+
+    function autoSavePresetColors() {
+      if (!state.loadedPresetName) return;
+      const color = state.settingsInfo && state.settingsInfo.custom_theme_color;
+      const color2 = state.settingsInfo && state.settingsInfo.custom_theme_color_2;
+      const useSecond = state.settingsInfo && state.settingsInfo.custom_theme_use_second_color;
+      if (!color) return;
+      apiCall('update_custom_theme_preset', state.loadedPresetName, color, color2 || '#fb7185', !!useSecond).then(response => {
+        if (response && response.ok) {
+          if (!state.settingsInfo) state.settingsInfo = {};
+          state.settingsInfo.custom_theme_presets = response.custom_theme_presets || [];
+        }
+      }).catch(() => {});
     }
 
     async function deleteCustomThemePreset(name) {
@@ -3107,10 +3887,11 @@
         if (!response.ok) throw new Error(response.error || 'Could not delete preset');
         if (!state.settingsInfo) state.settingsInfo = {};
         state.settingsInfo.custom_theme_presets = response.custom_theme_presets || [];
-        renderSettings();
         renderTabs();
-        if (state.customThemeEditorOpen) renderCustomThemeEditor();
-        toast('Theme preset deleted');
+        if (document.activeElement) document.activeElement.blur();
+        colorPickerOpen = false;
+        renderCustomThemeEditor();
+        toast('Theme deleted');
       } catch (error) {
         toast(error.message || 'Could not delete preset');
       }
@@ -3125,10 +3906,20 @@
       applyVersionLabels();
       applyTheme(state.settingsInfo && state.settingsInfo.theme ? state.settingsInfo.theme : 'neon');
       applyFont(state.settingsInfo && state.settingsInfo.font ? state.settingsInfo.font : 'inter');
+      applyFontSize(state.settingsInfo && state.settingsInfo.font_size ? state.settingsInfo.font_size : 100);
+      applyThemeMode(state.settingsInfo && state.settingsInfo.theme_mode ? state.settingsInfo.theme_mode : 'system');
+    }
+
+    function applyThemeMode(mode) {
+      if (mode === 'dark' || mode === 'light') {
+        document.body.dataset.themeMode = mode;
+      } else {
+        document.body.removeAttribute('data-theme-mode');
+      }
     }
 
     function applyVersionLabels() {
-      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '3.1';
+      const version = state.settingsInfo && state.settingsInfo.current_version ? state.settingsInfo.current_version : '3.2';
       const top = document.getElementById('app-version-label');
       const footer = document.getElementById('app-footer-version');
       if (top) top.textContent = `v${version}`;
@@ -3146,8 +3937,7 @@
       } else if (!options.preserveNotice) {
         state.updateNotice = null;
       }
-      renderSettings();
-      renderTabs();
+      // Only render update notice. Don't rebuild the settings tab.
       renderUpdateNotice();
     }
 
@@ -3161,8 +3951,6 @@
           }
         }
       } catch {}
-      renderSettings();
-      renderTabs();
       renderUpdateNotice();
     }
 
@@ -3236,7 +4024,7 @@
                       <code class="path-code">${escapeHtml(item.path)}</code>
                     </div>
                     <div class="path-actions">
-                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button>
+                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button><button class="tiny-btn" data-action="backup-path" data-path="${escapeHtml(item.path)}" data-category="${escapeHtml(item.category || item.description || 'Game data')}">Backup</button>
                       <button class="tiny-btn" data-action="copy-path" data-path="${escapeHtml(item.path)}">Copy</button>
                       <button class="tiny-btn danger" data-action="delete-path" data-path="${escapeHtml(item.path)}">Delete</button>
                     </div>
@@ -3250,7 +4038,7 @@
 
       $home.innerHTML = `
         <div class="hero">
-          <h1><span class="grad">Ghost Hunter</span> Pro</h1>
+          <h1><span class="grad">Ghost Hunter Pro</span></h1>
           <p>Find and eliminate leftover game files lurking in your system.<br />Enter a game name or Steam AppID to begin the hunt.</p>
           <div class="search-wrap">
             <form class="search-shell" id="home-search-form">
@@ -3291,6 +4079,167 @@
       `;
     }
 
+    function closeOverlayAnimated(root) {
+      // Play the TV-off animation, then remove the node.
+      if (!root || root.classList.contains('closing')) return;
+      root.classList.remove('opening');
+      root.classList.add('closing');
+      setTimeout(() => root.remove(), 190);
+    }
+
+    function renderEditGameDialog() {
+      let root = document.getElementById('edit-game-overlay');
+      if (!state.editingLibraryGameId) {
+        closeOverlayAnimated(root);
+        return;
+      }
+      const item = state.libraryItems.find(x => String(x.appid) === String(state.editingLibraryGameId));
+      if (!item) return;
+      if (root && root.classList.contains('closing')) { root.remove(); root = null; }
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'edit-game-overlay';
+        root.className = 'edit-game-overlay opening';
+        document.body.appendChild(root);
+        setTimeout(() => root && root.classList.remove('opening'), 320);
+      }
+      root.innerHTML = `
+        <div class="edit-game-dialog">
+          <h3>Edit Game Details</h3>
+          <p>Enter a Steam AppID to automatically recognize and refresh the official game name and cover. Name and cover are optional personal display overrides.</p>
+          <label class="edit-game-field">STEAM APPID <span id="edit-appid-status" style="color:var(--cyan);font-weight:600;"></span>
+            <div style="display:flex;gap:8px;">
+              <input id="edit-game-appid" data-edit-appid value="${escapeHtml(item.appid)}" placeholder="Enter AppID for auto-refresh" style="flex:1;" />
+              <button class="btn" data-action="fetch-edit-steam" style="padding:8px 12px;font-size:12px;">Fetch ID</button>
+            </div>
+          </label>
+          <label class="edit-game-field">GAME NAME<input id="edit-game-name" value="${escapeHtml(item.name)}"></label>
+          <label class="edit-game-field">COVER IMAGE URL<input id="edit-game-image" value="${escapeHtml(item.header_image||'')}"></label>
+          <div class="edit-game-actions">
+            <button class="btn" data-action="close-edit-game">Cancel</button>
+            <button class="btn accent" data-action="save-edit-game">Save Changes</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function addLibrarySuggestionsHtml() {
+      if (!state.addLibrarySuggestions.length) return '';
+      return `
+        <div class="suggestions" id="add-library-suggestions-box" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:120;">
+          ${state.addLibrarySuggestions.map(item => `
+            <button class="suggestion" type="button" tabindex="-1" data-action="pick-add-suggestion" data-appid="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+              ${item.tiny_image ? `<img src="${escapeHtml(item.tiny_image)}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" /><div class="fallback" style="display:none">${icon('ghost')}</div>` : `<div class="fallback">${icon('ghost')}</div>`}
+              <div>
+                <div class="suggestion-title">${escapeHtml(item.name)}</div>
+                <div class="suggestion-sub">AppID: ${escapeHtml(item.id)}</div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderAddLibrarySuggestionsOnly() {
+      // Update just the dropdown; never rebuild the dialog while typing,
+      // otherwise the input loses focus and the whole panel flashes.
+      const wrap = document.getElementById('add-library-suggestions-wrap');
+      if (wrap) wrap.innerHTML = addLibrarySuggestionsHtml();
+    }
+
+    function renderAddLibraryDialog() {
+      let root = document.getElementById('add-library-overlay');
+      if (!state.addLibraryModalOpen) {
+        closeOverlayAnimated(root);
+        return;
+      }
+      if (root && root.classList.contains('closing')) { root.remove(); root = null; }
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'add-library-overlay';
+        root.className = 'edit-game-overlay opening';
+        document.body.appendChild(root);
+        // Drop the opening class once the animation is done so later
+        // re-renders don't replay the TV-on effect.
+        setTimeout(() => root && root.classList.remove('opening'), 320);
+      }
+      root.innerHTML = `
+        <div class="edit-game-dialog" style="width:min(580px,100%);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="margin:0;">Add Game to Library</h3>
+            <button class="btn" data-action="close-add-library" style="padding:4px 8px;font-size:12px;">${icon('x')}</button>
+          </div>
+          <p style="margin:0 0 16px;color:var(--muted);font-size:13px;">Search for any Steam game with autocomplete suggestions or add a custom game record with save file scan or a custom path override.</p>
+          
+          <div class="card add-lib-card" style="margin-bottom:16px;position:relative;z-index:5;overflow:visible;">
+            <h4 style="margin:0 0 8px;color:var(--text);font-size:14px;display:flex;align-items:center;gap:6px;">${icon('search')} Option 1: Search Game by Name or AppID</h4>
+            <div style="position:relative;">
+              <div style="display:flex;gap:8px;">
+                <input id="add-library-search-input" class="add-lib-input" value="${escapeHtml(state.addLibraryQuery)}" placeholder="Search game name or AppID..." autocomplete="off" style="flex:1;" />
+                <button class="btn accent" data-action="add-library-search-submit">Scan & Add</button>
+              </div>
+              <div id="add-library-suggestions-wrap">${addLibrarySuggestionsHtml()}</div>
+            </div>
+          </div>
+
+          <div class="card add-lib-card">
+            <h4 style="margin:0 0 8px;color:var(--text);font-size:14px;display:flex;align-items:center;gap:6px;">${icon('folder')} Option 2: Add Custom Game & Path</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <label class="edit-game-field" style="margin:0;">APP ID<div style="display:flex;gap:8px;"><input id="add-library-custom-appid" placeholder="e.g. 1177980" style="flex:1;min-width:0;" /><button class="btn" data-action="fetch-custom-appid" style="padding:8px 12px;font-size:12px;white-space:nowrap;">Fetch ID</button></div></label>
+              <label class="edit-game-field" style="margin:0;">GAME NAME<input id="add-library-custom-name" placeholder="Game Name" /></label>
+            </div>
+            <label class="edit-game-field" style="margin:0 0 10px;">COVER IMAGE URL<input id="add-library-custom-image" placeholder="https://..." /></label>
+            <label class="edit-game-field" style="margin:0 0 14px;">CUSTOM PATH<input id="add-library-custom-path" placeholder="C:\\Users\\...\\Documents\\My Games" /></label>
+            <div style="display:flex;justify-content:flex-end;">
+              <button class="btn accent" data-action="submit-custom-game">Add Custom Record</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sortLibraryItems() {
+      // Mirror the backend order: visible first, unknowns last, then A-Z.
+      state.libraryItems.sort((a, b) => {
+        const arch = (a.archived ? 1 : 0) - (b.archived ? 1 : 0);
+        if (arch) return arch;
+        const unk = (a.is_unknown ? 1 : 0) - (b.is_unknown ? 1 : 0);
+        if (unk) return unk;
+        return String(a.name || '').toLowerCase().localeCompare(String(b.name || '').toLowerCase());
+      });
+    }
+
+    function insertLibraryItem(game) {
+      // Add or update a single card in place; never trigger a full rescan.
+      if (!game || !game.appid) return;
+      const record = {
+        is_unknown: false,
+        is_custom: game.is_custom !== false,
+        appid: String(game.appid),
+        name: game.name || `Game (${game.appid})`,
+        developers: game.developers || [],
+        publishers: game.publishers || [],
+        header_image: game.header_image || '',
+        short_description: game.short_description || '',
+        paths: game.paths || [],
+        path_count: game.path_count != null ? game.path_count : (game.paths || []).length,
+        total_size: game.total_size || 0,
+        archived: false,
+        hidden: false,
+        installed_sources: game.sources || game.installed_sources || [],
+        installed: game.installed !== false,
+        has_leftovers: !!(game.has_leftovers || (game.paths || []).length),
+      };
+      const idx = state.libraryItems.findIndex(item => String(item.appid) === record.appid);
+      if (idx >= 0) state.libraryItems[idx] = { ...state.libraryItems[idx], ...record };
+      else state.libraryItems.push(record);
+      sortLibraryItems();
+      if (state.activeTab === 'library') {
+        renderLibrary();
+        renderTabs();
+      }
+    }
+
     function renderLibrary() {
       syncSelectedLibraryIds();
       const filtered = getFilteredLibraryItems();
@@ -3324,13 +4273,15 @@
         `;
       } else {
         content = `
-          <div class="library-meta">${state.libraryFilter === 'hidden' ? `${archivedCount} hidden game${archivedCount === 1 ? '' : 's'}` : `${activeCount} visible game${activeCount === 1 ? '' : 's'} in library`}</div>
+          <div class="library-meta">${filtered.length} ${state.libraryFilter === 'hidden' ? 'hidden' : 'visible'} game${filtered.length === 1 ? '' : 's'} in current view</div>
           <div class="library-grid">
-            ${filtered.map(item => `
-              <article class="game-card ${isLibrarySelected(item.appid) ? 'selected' : ''}">
+            ${filtered.map((item, index) => `
+              ${item.is_unknown && !filtered.slice(0, index).some(previous => previous.is_unknown) ? '<div class="unknown-games-divider">Unknown Games</div>' : ''}
+              <article class="game-card ${isLibrarySelected(item.appid) ? 'selected' : ''}" data-library-appid="${escapeHtml(item.appid)}">
                 <button class="select-fab ${isLibrarySelected(item.appid) ? 'active' : ''}" title="${isLibrarySelected(item.appid) ? 'Deselect this game' : 'Select this game'}" data-action="toggle-select-game" data-appid="${escapeHtml(item.appid)}">${isLibrarySelected(item.appid)
                   ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 16.5 19 7.5"></path></svg>`
                   : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>`}</button>
+                ${item.is_custom ? `<button class="remove-fab" title="Remove this manually added game from the library" data-action="remove-custom-game" data-appid="${escapeHtml(item.appid)}" data-name="${escapeHtml(item.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M4 6h16"></path><path d="M6 6l1 14h10l1-14"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></button>` : ''}
                 <button class="archive-fab ${item.archived ? 'restore' : 'archive'}" title="${item.archived ? 'Show this game' : 'Hide this game'}" data-action="toggle-archive" data-appid="${escapeHtml(item.appid)}" data-archived="${item.archived ? '1' : '0'}">${item.archived
                   ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
                   : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg>`}</button>
@@ -3342,8 +4293,8 @@
                     : item.has_leftovers ? `<div class="status-badge"><span class="badge-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6"></path><path d="M8 6h8"></path><path d="M6 6h12l-1 14H7L6 6z"></path><path d="M10 10v6"></path><path d="M14 10v6"></path></svg></span>Leftovers found</div>` : ''}
                 </div>
                 <div class="card-body" data-action="open-game" data-appid="${escapeHtml(item.appid)}">
-                  <div class="game-title">${escapeHtml(item.name)}</div>
-                  <div class="game-sub">AppID: ${escapeHtml(item.appid)}</div>
+                  <div class="game-title">${escapeHtml(item.name)}</div><button class="tiny-btn" data-action="edit-library-game" data-appid="${escapeHtml(item.appid)}">Edit Details</button>
+                  <div class="game-sub">AppID: ${escapeHtml(item.appid)} ${String(item.appid).match(/^\d+$/) ? `<button class="tiny-btn" data-action="open-steamdb" data-appid="${escapeHtml(item.appid)}" title="Open on SteamDB">↗</button>` : ''}</div>
                   ${item.installed ? `<div class="game-flags"><span class="mini-badge legit">Installed: ${escapeHtml(formatInstalledSources(item.installed_sources || []))}</span></div>` : ''}
                 </div>
               </article>
@@ -3365,8 +4316,11 @@
               ${state.libraryQuery ? `<button class="search-clear-btn" type="button" data-action="library-clear-search" title="Clear search" aria-label="Clear library search">${icon('x')}</button>` : ''}
             </label>
             <div class="toolbar-actions">
-              <button class="btn filter ${state.libraryFilter === 'visible' ? 'active' : ''}" data-action="library-filter" data-filter="visible">${icon('eye')} Show Visible (${activeCount})</button>
-              <button class="btn filter ${state.libraryFilter === 'hidden' ? 'active' : ''}" data-action="library-filter" data-filter="hidden"><span class="inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg></span>Hidden (${archivedCount})</button>
+              <button class="btn filter ${state.libraryFilter === 'visible' ? 'active' : ''}" data-action="library-filter" data-filter="visible">${icon('eye')} Show Visible (${state.libraryFilter === 'visible' ? filtered.length : state.libraryItems.filter(item => !item.archived && (() => { const chosen=state.librarySourceFilter||[]; const sources=(item.installed_sources||[]).map(x=>String(x).toLowerCase()); return !chosen.length || (chosen.includes('local')&&!sources.length) || sources.some(x=>chosen.includes(x)); })()).length})</button>
+              <button class="btn filter ${state.libraryFilter === 'hidden' ? 'active' : ''}" data-action="library-filter" data-filter="hidden"><span class="inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7a2.5 2.5 0 0 0 3.3 3.3"></path><path d="M9.9 5.1A10.8 10.8 0 0 1 12 4.9c5 0 8.7 3.2 10 7.1a10.9 10.9 0 0 1-4 5.4"></path><path d="M6.6 6.7A11.5 11.5 0 0 0 2 12c1.3 3.9 5 7.1 10 7.1 1.9 0 3.6-.4 5.1-1.1"></path></svg></span>Hidden (${state.libraryFilter === 'hidden' ? filtered.length : state.libraryItems.filter(item => item.archived && (() => { const chosen=state.librarySourceFilter||[]; const sources=(item.installed_sources||[]).map(x=>String(x).toLowerCase()); return !chosen.length || (chosen.includes('local')&&!sources.length) || sources.some(x=>chosen.includes(x)); })()).length})</button>
+              <details id="library-source-menu" class="source-menu" ${state.sourceMenuOpen ? 'open' : ''}><summary class="btn filter">${(state.librarySourceFilter || []).length ? `Sources (${state.librarySourceFilter.length})` : 'All Sources'}</summary><div class="source-menu-panel"><button class="source-choice ${(state.librarySourceFilter || []).length ? '' : 'active'}" data-action="clear-library-sources"><span class="source-check">${(state.librarySourceFilter || []).length ? '' : '✓'}</span>All Sources</button>${[['local','Local'],['steam','Steam'],['epic','Epic Games'],['gog','GOG']].map(([id,label])=>`<button class="source-choice ${(state.librarySourceFilter||[]).includes(id)?'active':''}" data-action="toggle-library-source" data-source="${id}"><span class="source-check">${(state.librarySourceFilter||[]).includes(id)?'✓':''}</span>${label}</button>`).join('')}</div></details>
+              <button class="btn ${getFilteredLibraryItems().length && getFilteredLibraryItems().every(item=>isLibrarySelected(item.appid))?'select-all-active':''}" data-action="library-select-all">${getFilteredLibraryItems().length && getFilteredLibraryItems().every(item=>isLibrarySelected(item.appid))?'Deselect All':'Select All'}</button>
+              <button class="btn accent" data-action="open-add-library">${icon('plus')} Add to Library</button>
               <button class="btn bulk" data-action="library-delete-selected" ${bulkCount ? '' : 'disabled'}>${icon('sparkles')} Delete Selected (${bulkCount})</button>
               <button class="btn" data-action="library-rescan" ${state.libraryLoading ? 'disabled' : ''}>${icon('rotate')} Rescan</button>
             </div>
@@ -3388,16 +4342,16 @@
       document.getElementById('view-settings').classList.toggle('active', state.activeTab === 'settings');
     }
 
+
+
     function customThemeEditorHtml() {
       const info = state.settingsInfo || {};
       const color1 = normalizeHexColor(info.custom_theme_color || '#d946ef');
       const color2 = normalizeHexColor(info.custom_theme_color_2 || '#fb7185');
       const useSecond = !!info.custom_theme_use_second_color;
       return `
+        <div class="custom-theme-modal-preview"></div>
         <div class="custom-theme-controls" style="margin-top:0;">
-          <div class="settings-section-title" style="margin-bottom:0;">Accent Colors</div>
-          <div class="settings-panel-sub" style="margin-bottom:0;">Pick a main color and optionally enable a second shade color. Changes apply instantly to the Custom theme.</div>
-          <div class="custom-color-preview"></div>
           <div class="custom-theme-row">
             <input type="color" value="${escapeHtml(color1)}" data-action="custom-theme-color-input" aria-label="Custom theme color" />
             <input class="hex-input" value="${escapeHtml(color1)}" data-action="custom-theme-hex-input" maxlength="7" aria-label="Custom theme hex color" />
@@ -3405,14 +4359,37 @@
             <input type="color" value="${escapeHtml(color2)}" data-action="custom-theme-color2-input" aria-label="Custom theme second color" ${useSecond ? '' : 'disabled'} />
             <input class="hex-input" value="${escapeHtml(color2)}" data-action="custom-theme-hex2-input" maxlength="7" aria-label="Custom theme second hex color" ${useSecond ? '' : 'disabled'} />
             <button class="settings-tab" type="button" data-action="apply-custom-theme">Apply Theme</button>
-            <button class="settings-tab active" type="button" data-action="open-preset-dialog">Save Preset</button>
+            <button class="settings-tab active" type="button" data-action="open-preset-dialog">Save Theme</button>
           </div>
         </div>
         <div class="custom-theme-controls" style="margin-top:0;">
-          <div class="settings-section-title" style="margin-bottom:0;">Saved Presets</div>
+          <div class="settings-section-title" style="margin-bottom:0;">Saved Themes</div>
           ${(info.custom_theme_presets || []).length ? `<div class="preset-list">
-            ${(info.custom_theme_presets || []).map(preset => `<div class="preset-card" style="--preset-color:${escapeHtml(preset.color)};--preset-color2:${escapeHtml(preset.color2 || preset.color)}"><button class="theme-card-main" data-action="load-theme-preset" data-color="${escapeHtml(preset.color)}" data-color2="${escapeHtml(preset.color2 || '#fb7185')}" data-use-second="${preset.use_second ? '1' : '0'}"><div class="preset-card-preview"></div><div class="preset-card-name">${escapeHtml(preset.name)}</div></button><button class="preset-delete" data-action="delete-theme-preset" data-preset-name="${escapeHtml(preset.name)}" title="Delete preset">${icon('x')}</button></div>`).join('')}
-          </div>` : `<div class="settings-panel-sub" style="margin-bottom:0;">No saved presets yet. Choose a color and click Save Preset.</div>`}
+            ${(info.custom_theme_presets || []).map(preset => {
+              const isActive = state.loadedPresetName && state.loadedPresetName.toLowerCase() === preset.name.toLowerCase();
+              const isEditing = state.editingPresetName && state.editingPresetName.toLowerCase() === preset.name.toLowerCase();
+              return `<div class="preset-card ${isEditing ? 'expanded' : ''} ${isActive ? 'selected' : ''}" style="--preset-color:${escapeHtml(preset.color)};--preset-color2:${escapeHtml(preset.color2 || preset.color)}" data-preset-card="${escapeHtml(preset.name)}" draggable="true" data-drag-preset="${escapeHtml(preset.name)}">
+                <button class="theme-card-main" data-action="select-preset" data-color="${escapeHtml(preset.color)}" data-color2="${escapeHtml(preset.color2 || '#fb7185')}" data-use-second="${preset.use_second ? '1' : '0'}" data-preset-name="${escapeHtml(preset.name)}">
+                  <div class="preset-card-preview"></div>
+                  <div class="preset-card-name" style="padding-right:4px;display:flex;align-items:center;justify-content:space-between;">${escapeHtml(preset.name)}<span class="preset-active-dot" data-preset-dot-name="${escapeHtml(preset.name)}" style="color:var(--cyan);font-size:16px;flex-shrink:0;${isActive ? '' : 'display:none;'}">●</span></div>
+                </button>
+                <button class="preset-rename" data-action="toggle-edit-preset" data-preset-name="${escapeHtml(preset.name)}" title="Edit preset"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg></button>
+                <button class="preset-delete" data-action="delete-theme-preset" data-preset-name="${escapeHtml(preset.name)}" title="Delete preset">${icon('x')}</button>
+                <div class="preset-edit-body">
+                  <input class="preset-edit-name-input" data-action="preset-edit-name" value="${escapeHtml(preset.name)}" placeholder="Preset name" style="width:100%;box-sizing:border-box;" />
+                  <div class="preset-edit-row">
+                    <input type="color" value="${escapeHtml(preset.color)}" data-action="preset-edit-color" data-preset-name="${escapeHtml(preset.name)}" />
+                    <input type="color" value="${escapeHtml(preset.color2 || '#fb7185')}" data-action="preset-edit-color2" data-preset-name="${escapeHtml(preset.name)}" ${preset.use_second ? '' : 'disabled'} />
+                    <button class="settings-tab second-color-toggle ${preset.use_second ? 'active' : ''}" type="button" data-action="toggle-preset-second-color" data-preset-name="${escapeHtml(preset.name)}">${preset.use_second ? 'Second Color: On' : 'Second Color: Off'}</button>
+                  </div>
+                  <div class="preset-edit-actions">
+                    <button class="preset-edit-btn save" data-action="save-edit-preset" data-original-name="${escapeHtml(preset.name)}">${icon('save')} Save</button>
+                    <button class="preset-edit-btn cancel" data-action="cancel-edit-preset">Cancel</button>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>` : `<div class="settings-panel-sub" style="margin-bottom:0;">No saved themes yet. Choose a color and click Save Preset.</div>`}
         </div>
       `;
     }
@@ -3420,6 +4397,9 @@
     function closeCustomThemeEditorAnimated() {
       if (!state.customThemeEditorOpen || state.customThemeEditorClosing) return;
       state.customThemeEditorClosing = true;
+      state.renamingPreset = null;
+      state.renamingPresetValue = '';
+      if (document.activeElement) document.activeElement.blur();
       renderCustomThemeEditor();
       setTimeout(() => {
         state.customThemeEditorOpen = false;
@@ -3428,16 +4408,67 @@
       }, 190);
     }
 
+    function updateCustomThemeEditorState() {
+      // Lightweight DOM update: toggle glow/edit classes without rebuilding innerHTML.
+      // This prevents the color picker from closing and avoids visual "flashing".
+      const presets = $customTheme.querySelectorAll('[data-preset-card]');
+      presets.forEach(card => {
+        const name = card.dataset.presetCard || '';
+        const isActive = !!(state.loadedPresetName && name.toLowerCase() === state.loadedPresetName.toLowerCase());
+        // Cards are rendered with the 'selected' class, not 'active'.
+        card.classList.toggle('selected', isActive);
+        const isEditing = state.editingPresetName && name.toLowerCase() === state.editingPresetName.toLowerCase();
+        card.classList.toggle('expanded', isEditing);
+      });
+      // Update active dot indicators
+      const dots = $customTheme.querySelectorAll('.preset-active-dot');
+      dots.forEach(dot => {
+        const name = dot.dataset.presetDotName || '';
+        const isActive = state.loadedPresetName && name.toLowerCase() === state.loadedPresetName.toLowerCase();
+        dot.style.display = isActive ? '' : 'none';
+      });
+      // Update second-color toggle button state if present
+      const toggleBtn = $customTheme.querySelector('[data-action="toggle-custom-second-color"]');
+      if (toggleBtn && state.settingsInfo) {
+        const nv = !!state.settingsInfo.custom_theme_use_second_color;
+        toggleBtn.classList.toggle('active', nv);
+        toggleBtn.textContent = nv ? 'Second Color: On' : 'Second Color: Off';
+        const c2Row = $customTheme.querySelector('.second-color-row');
+        if (c2Row) c2Row.style.display = nv ? '' : 'none';
+      }
+    }
+
     function renderCustomThemeEditor() {
       if (!state.customThemeEditorOpen && !state.customThemeEditorClosing) {
         $customTheme.classList.remove('show', 'closing');
         $customTheme.innerHTML = '';
         return;
       }
+      // Guard: NEVER rebuild while user is interacting inside the overlay.
+      // If the overlay already has content and we're in an active interaction
+      // (color picker open, or clicking inside the modal), do a lightweight
+      // class-only update instead of a full innerHTML rebuild.
+      if (colorPickerOpen) {
+        return;
+      }
+      // If overlay is already showing and the user is mid-interaction
+      // (a preset card or input is focused), do a lightweight update.
+      const focused = document.activeElement;
+      const isInsideEditor = focused && $customTheme.contains(focused);
+      if (state.customThemeEditorOpen && !state.customThemeEditorClosing
+          && $customTheme.querySelector('.custom-theme-modal-card')
+          && isInsideEditor) {
+        updateCustomThemeEditorState();
+        return;
+      }
       const info = state.settingsInfo || {};
       const color = normalizeHexColor(info.custom_theme_color || '#d946ef');
       $customTheme.classList.add('show');
       $customTheme.classList.toggle('closing', !!state.customThemeEditorClosing);
+      // Backdrop click to close
+      $customTheme.onclick = function(e) {
+        if (e.target === $customTheme) closeCustomThemeEditorAnimated();
+      };
       $customTheme.innerHTML = `
         <div class="custom-theme-modal-card card" role="dialog" aria-modal="true">
           <div class="custom-theme-modal-head">
@@ -3448,8 +4479,6 @@
             <button class="modal-close" data-action="close-custom-theme-editor">${icon('x')}</button>
           </div>
           <div class="custom-theme-modal-body">
-            <div class="custom-theme-modal-preview"></div>
-            <div class="settings-note">Current custom color: ${escapeHtml(color)}</div>
             ${customThemeEditorHtml()}
           </div>
         </div>
@@ -3466,13 +4495,12 @@
       $preset.classList.add('show');
       $preset.innerHTML = `
         <div class="preset-modal-card card" role="dialog" aria-modal="true">
-          <h3 class="confirm-title">Save Custom Theme Preset</h3>
-          <div class="confirm-text">Give this color preset a name so you can reuse it later.
-Current color: ${escapeHtml(color)}</div>
+          <h3 class="confirm-title">Save Custom Theme</h3>
+          <div class="confirm-text">Give this color preset a name so you can reuse it later.</div>
           <input class="preset-modal-input" id="preset-name-input" value="${escapeHtml(state.presetName || '')}" placeholder="Preset name, e.g. Ruby Night" />
           <div class="confirm-actions" style="margin-top:16px;">
             <button class="btn" data-action="preset-cancel">Cancel</button>
-            <button class="btn primary" data-action="preset-save-confirm">Save Preset</button>
+            <button class="btn primary" data-action="preset-save-confirm">Save Theme</button>
           </div>
         </div>
       `;
@@ -3551,7 +4579,8 @@ Current color: ${escapeHtml(color)}</div>
             <button class="modal-close" data-action="close-selection-review">${icon('x')}</button>
           </div>
           <div class="selection-actions">
-            <button class="btn primary" data-action="selection-delete-all">Delete All Selected</button>
+            <button class="btn" disabled>Total size: ${formatSize(items.reduce((sum, item) => sum + Number(item.total_size || 0), 0))}</button>
+            <button class="btn accent" data-action="selection-delete-all">Delete All Selected</button>
             <button class="btn" data-action="selection-clear-all">Clear Selection</button>
           </div>
           ${items.map(item => `
@@ -3585,7 +4614,7 @@ Current color: ${escapeHtml(color)}</div>
                           <code class="path-code">${escapeHtml(path.path)}</code>
                         </div>
                         <div class="path-actions">
-                          <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(path.path)}">Open Path</button>
+                          <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(path.path)}">Open Path</button><button class="tiny-btn" data-action="backup-path" data-path="${escapeHtml(path.path)}" data-category="${escapeHtml(path.category || path.description || 'Game data')}" data-category="${escapeHtml(path.category || path.description || 'Game data')}">Backup</button>
                           <button class="tiny-btn" data-action="copy-path" data-path="${escapeHtml(path.path)}">Copy</button>
                           <button class="tiny-btn danger" data-action="delete-path" data-path="${escapeHtml(path.path)}">Delete</button>
                         </div>
@@ -3674,9 +4703,9 @@ Current color: ${escapeHtml(color)}</div>
               </div>
               <div class="modal-actions">
                 <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}">Open on SteamDB</button>
-                <button class="btn primary" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
+                <button class="btn accent" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
                 <button class="btn" data-action="modal-delete-selected" data-appid="${escapeHtml(game.appid)}">Delete Selected</button>
-                <button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Show this Game' : 'Hide this Game'}</button>
+                <button class="btn" data-action="backup-game" data-appid="${escapeHtml(game.appid)}">Backup All</button><button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Show this Game' : 'Hide this Game'}</button>
               </div>
             </div>
           </div>
@@ -3696,7 +4725,7 @@ Current color: ${escapeHtml(color)}</div>
                       <code class="path-code">${escapeHtml(item.path)}</code>
                     </div>
                     <div class="path-actions">
-                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button>
+                      <button class="tiny-btn" data-action="open-path" data-path="${escapeHtml(item.path)}">Open Path</button><button class="tiny-btn" data-action="backup-path" data-path="${escapeHtml(item.path)}" data-category="${escapeHtml(item.category || item.description || 'Game data')}">Backup</button>
                       <button class="tiny-btn" data-action="copy-path" data-path="${escapeHtml(item.path)}">Copy</button>
                       <button class="tiny-btn danger" data-action="delete-path" data-path="${escapeHtml(item.path)}">Delete</button>
                     </div>
@@ -3710,6 +4739,7 @@ Current color: ${escapeHtml(color)}</div>
     }
 
     function renderSettings() {
+      
       const info = state.settingsInfo || {};
       const update = state.updateInfo;
       const configured = !!info.configured;
@@ -3783,10 +4813,18 @@ Current color: ${escapeHtml(color)}</div>
           <div class="settings-panel-title">Appearance</div>
           <div class="settings-panel-sub">Choose a theme and font style. These settings apply across Home, Library, modals, and Settings.</div>
           <div class="settings-section">
+            <div class="settings-section-title">Display Mode</div>
+            <div class="settings-tabs" style="margin:0 0 16px;">
+              <button class="settings-tab ${(info.theme_mode || 'system') === 'system' ? 'active' : ''}" data-action="set-theme-mode" data-mode="system">System</button>
+              <button class="settings-tab ${(info.theme_mode || 'system') === 'dark' ? 'active' : ''}" data-action="set-theme-mode" data-mode="dark">Dark</button>
+              <button class="settings-tab ${(info.theme_mode || 'system') === 'light' ? 'active' : ''}" data-action="set-theme-mode" data-mode="light">Light</button>
+            </div>
+          </div>
+          <div class="settings-section">
             <div class="settings-section-title">Themes</div>
             <div class="theme-grid">
               ${(info.theme_options || []).map(theme => `
-                <div class="theme-card ${info.theme === theme.id ? 'active' : ''}">
+                <div class="theme-card ${(document.body.dataset.theme || 'neon') === theme.id ? 'active' : ''}">
                   <button class="theme-card-main" data-action="set-theme" data-theme-id="${escapeHtml(theme.id)}">
                     <div class="theme-preview ${escapeHtml(theme.id)}"></div>
                     <div class="theme-card-title">${escapeHtml(theme.label)}</div>
@@ -3798,10 +4836,18 @@ Current color: ${escapeHtml(color)}</div>
             </div>
           </div>
           <div class="settings-section">
+            <div class="settings-section-title">Font Size</div>
+            <div class="font-size-slider-wrap">
+              <label for="font-size-slider">Text Size</label>
+              <input type="range" class="font-size-slider" id="font-size-slider" min="75" max="130" step="5" value="${Number(info.font_size || 100)}" data-action="font-size-slider" />
+              <span class="font-size-value">${Number(info.font_size || 100)}%</span>
+            </div>
+          </div>
+          <div class="settings-section">
             <div class="settings-section-title">Fonts</div>
             <div class="font-grid">
               ${(info.font_options || []).map(font => `
-                <button class="font-card ${info.font === font.id ? 'active' : ''}" data-action="set-font" data-font-id="${escapeHtml(font.id)}">
+                <button class="font-card ${(document.body.dataset.font || 'inter') === font.id ? 'active' : ''}" data-action="set-font" data-font-id="${escapeHtml(font.id)}">
                   <div class="font-preview ${escapeHtml(font.id)}">Ghost Hunter Pro</div>
                   <div class="theme-card-title">${escapeHtml(font.label)}</div>
                   <div class="theme-card-sub">${escapeHtml(font.description || '')}</div>
@@ -3864,20 +4910,16 @@ Current color: ${escapeHtml(color)}</div>
     function renderAll(options = {}) {
       renderHome();
       renderLibrary();
-      renderSettings();
+      // Don't rebuild settings from renderAll — it causes visual glitches
+      // like wrong theme showing as active. Settings only rebuilds when
+      // explicitly triggered (tab switch, theme/font change, etc.)
       renderTabs();
       renderModal();
       renderSelectionReview();
       renderConfirm();
       renderPresetDialog();
-      // Do not rebuild the custom theme editor during unrelated full-page
-      // refreshes, such as the background Library scan finishing. Rebuilding the
-      // modal while the native color picker is open makes the editor look like it
-      // refreshed/reloaded on the first color selection in packaged builds.
-      if (options.refreshCustomThemeEditor || !state.customThemeEditorOpen || state.customThemeEditorClosing) {
-        renderCustomThemeEditor();
-      }
       renderUpdateNotice();
+      renderAddLibraryDialog();
     }
 
     async function refreshLibrary(options = {}) {
@@ -3989,6 +5031,54 @@ Current color: ${escapeHtml(color)}</div>
       }
     });
 
+    document.addEventListener('change', event => {
+      const t = event.target;
+      if (t.type === 'color' && t.closest('#custom-theme-overlay')) {
+        colorPickerOpen = false;
+        openColorPickerEl = null;
+      }
+    });
+
+    // Toggle behavior for the native color picker: the OS popup cannot be
+    // closed by script, but a second click on the same swatch is intercepted
+    // so the picker does not immediately re-open — which reads as "close".
+    let openColorPickerEl = null;
+    document.addEventListener('click', event => {
+      const t = event.target;
+      if (t instanceof HTMLElement && t.matches('input[type="color"]') && t.closest('#custom-theme-overlay')) {
+        if (openColorPickerEl === t) {
+          event.preventDefault();
+          openColorPickerEl = null;
+          colorPickerOpen = false;
+        } else {
+          openColorPickerEl = t;
+        }
+        return;
+      }
+      // Any other click means the native popup has been dismissed.
+      openColorPickerEl = null;
+    }, true);
+
+    document.addEventListener('click', event => {
+      const menu = document.getElementById('library-source-menu');
+      if (menu && menu.open && !menu.contains(event.target)) {
+        state.sourceMenuOpen = false;
+        menu.removeAttribute('open');
+      }
+    });
+
+    function positionSourceMenu() {
+      const menu=document.getElementById('library-source-menu'); if(!menu||!menu.open)return;
+      const panel=menu.querySelector('.source-menu-panel'), button=menu.querySelector('summary'); if(!panel||!button)return;
+      const r=button.getBoundingClientRect(), h=panel.offsetHeight||180, w=panel.offsetWidth||172;
+      panel.style.position='fixed'; panel.style.left=`${Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))}px`; panel.style.top=`${Math.max(8,Math.min(window.innerHeight-h-8,r.top-h+2))}px`; panel.style.bottom='auto';
+    }
+
+    document.addEventListener('toggle', event => {
+      const target = event.target;
+      if (target && target.id === 'library-source-menu') { state.sourceMenuOpen = target.open; if (target.open) requestAnimationFrame(positionSourceMenu); }
+    }, true);
+
     document.addEventListener('input', event => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
@@ -4011,6 +5101,12 @@ Current color: ${escapeHtml(color)}</div>
         state.homeCursor = caret;
         clearTimeout(suggestionTimer);
         suggestionTimer = setTimeout(() => updateSuggestions(currentValue, caret), 220);
+      }
+      // Track color picker state
+      if (target.type === 'color' && target.closest('#custom-theme-overlay')) {
+        colorPickerOpen = true;
+        clearTimeout(window._colorPickerCloseTimer);
+        window._colorPickerCloseTimer = setTimeout(() => { colorPickerOpen = false; }, 500);
       }
       if (target.dataset.action === 'custom-theme-color-input') {
         const color = normalizeHexColor(target.value);
@@ -4063,6 +5159,109 @@ Current color: ${escapeHtml(color)}</div>
           scheduleCustomThemeColorSave(state.settingsInfo.custom_theme_color || '#d946ef');
         }
       }
+      if (target.dataset.action === 'font-size-slider') {
+        const size = Math.max(75, Math.min(130, Number(target.value || 100)));
+        applyFontSize(size);
+        const label = target.parentElement && target.parentElement.querySelector('.font-size-value');
+        if (label) label.textContent = `${size}%`;
+        if (!state.settingsInfo) state.settingsInfo = {};
+        state.settingsInfo.font_size = size;
+        apiCall('set_font_size', size).catch(() => {});
+      }
+      if (target.dataset.action === 'preset-rename-input') {
+        event.stopPropagation();
+        state.renamingPresetValue = target.value;
+      }
+      // Update preset preview when editing colors
+      if (target.dataset.action === 'preset-edit-color' || target.dataset.action === 'preset-edit-color2') {
+        const card = target.closest('.preset-card');
+        if (card) {
+          const c1Input = card.querySelector('[data-action="preset-edit-color"]');
+          const c2Input = card.querySelector('[data-action="preset-edit-color2"]');
+          if (c1Input) card.style.setProperty('--preset-color', normalizeHexColor(c1Input.value));
+          if (c2Input) card.style.setProperty('--preset-color2', normalizeHexColor(c2Input.value));
+        }
+      }
+    });
+
+    document.addEventListener('keydown', async event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      // Enter saves in the "Save Theme" name dialog.
+      if (event.key === 'Enter' && target.id === 'preset-name-input') {
+        event.preventDefault();
+        const saveBtn = document.querySelector('[data-action="preset-save-confirm"]');
+        if (saveBtn) saveBtn.click();
+        return;
+      }
+      // Enter saves while editing a saved theme's name.
+      if (event.key === 'Enter' && target.classList.contains('preset-edit-name-input')) {
+        event.preventDefault();
+        const card = target.closest('[data-preset-card]');
+        const saveBtn = card ? card.querySelector('[data-action="save-edit-preset"]') : null;
+        if (saveBtn) saveBtn.click();
+        return;
+      }
+      if (target.dataset.action === 'preset-rename-input') {
+        // Prevent space from triggering the parent button click
+        if (event.key === ' ') {
+          event.stopPropagation();
+          return;
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          const oldName = target.dataset.oldName || '';
+          const newName = target.value || '';
+          if (newName.trim() && newName.trim() !== oldName) {
+            await renameCustomThemePreset(oldName, newName.trim());
+          } else {
+            state.renamingPreset = null;
+            state.renamingPresetValue = '';
+            if (state.customThemeEditorOpen) { renderSettings(); renderTabs(); }
+          }
+        }
+        if (event.key === 'Escape') {
+          state.renamingPreset = null;
+          state.renamingPresetValue = '';
+          state.editingPresetName = null;
+          renderSettings();
+          renderTabs();
+        }
+      }
+    });
+
+    let libraryDragSelecting = false;
+    let libraryDragStart = null;
+    let libraryDragMode = 'select';
+    let libraryDragVisited = new Set();
+    function applyDragCard(card) { const id=card.dataset.libraryAppid; if(libraryDragVisited.has(id))return; libraryDragVisited.add(id); if((libraryDragMode==='select'&&!isLibrarySelected(id))||(libraryDragMode==='deselect'&&isLibrarySelected(id))){toggleLibrarySelection(id);renderLibrary();} }
+    document.addEventListener('mousedown', event => { const card=event.target.closest && event.target.closest('.game-card[data-library-appid]'); if(!card||event.button!==0||event.target.closest('button'))return; libraryDragStart={x:event.clientX,y:event.clientY,card}; libraryDragSelecting=false; libraryDragVisited.clear(); });
+    document.addEventListener('mousemove', event => { if(!libraryDragStart)return; if(!libraryDragSelecting && Math.hypot(event.clientX-libraryDragStart.x,event.clientY-libraryDragStart.y)>7){libraryDragSelecting=true; libraryDragMode=isLibrarySelected(libraryDragStart.card.dataset.libraryAppid)?'deselect':'select'; applyDragCard(libraryDragStart.card);} if(libraryDragSelecting){const card=event.target.closest && event.target.closest('.game-card[data-library-appid]');if(card)applyDragCard(card);} });
+    document.addEventListener('mouseup', () => { libraryDragSelecting=false; libraryDragStart=null; libraryDragVisited.clear(); });
+
+    document.addEventListener('input', async event => {
+      const target = event.target;
+      if (!target) return;
+      if (target.id === 'add-library-search-input') {
+        const raw = target.value;
+        state.addLibraryQuery = raw;
+        const clean = raw.trim();
+        if (clean.length < 2) {
+          state.addLibrarySuggestions = [];
+          renderAddLibrarySuggestionsOnly();
+          return;
+        }
+        try {
+          const suggestions = await apiCall('search_suggestions', clean);
+          const liveInput = document.getElementById('add-library-search-input');
+          if (!liveInput || liveInput.value !== raw) return;
+          state.addLibrarySuggestions = Array.isArray(suggestions) ? suggestions.slice(0, 6) : [];
+          renderAddLibrarySuggestionsOnly();
+        } catch {
+          state.addLibrarySuggestions = [];
+          renderAddLibrarySuggestionsOnly();
+        }
+      }
     });
 
     document.addEventListener('click', async event => {
@@ -4079,6 +5278,15 @@ Current color: ${escapeHtml(color)}</div>
         if (event.target === $confirm) {
           settleConfirm(false);
         }
+        // Click on the dimmed backdrop closes these dialogs too.
+        if (event.target.id === 'edit-game-overlay') {
+          state.editingLibraryGameId = null;
+          renderEditGameDialog();
+        }
+        if (event.target.id === 'add-library-overlay') {
+          state.addLibraryModalOpen = false;
+          renderAddLibraryDialog();
+        }
         if (event.target === $selection) {
           state.bulkReviewOpen = false;
           renderSelectionReview();
@@ -4086,9 +5294,6 @@ Current color: ${escapeHtml(color)}</div>
         if (event.target === $preset) {
           state.presetDialogOpen = false;
           renderPresetDialog();
-        }
-        if (event.target === $customTheme) {
-          closeCustomThemeEditorAnimated();
         }
         return;
       }
@@ -4105,6 +5310,7 @@ Current color: ${escapeHtml(color)}</div>
           renderTabs();
           updateLibraryScrollButton();
           if (state.activeTab === 'settings') {
+            renderSettings();
             await refreshUpdateInfo();
           } else if (state.activeTab === 'home') {
             restoreHomeInputFocus();
@@ -4118,6 +5324,9 @@ Current color: ${escapeHtml(color)}</div>
         case 'library-rescan':
           await refreshLibrary({ forceRescan: true });
           break;
+        case 'clear-library-sources': state.librarySourceFilter=[]; state.sourceMenuOpen=true; renderLibrary(); break;
+        case 'toggle-library-source': { const source=actionEl.dataset.source||''; const current=state.librarySourceFilter||[]; state.librarySourceFilter=current.includes(source)?current.filter(x=>x!==source):[...current,source]; state.sourceMenuOpen=true; renderLibrary(); break; }
+        case 'library-select-all': toggleSelectAllFiltered(); renderLibrary(); renderTabs(); break;
         case 'library-filter':
           state.libraryFilter = actionEl.dataset.filter || 'visible';
           renderLibrary();
@@ -4128,6 +5337,195 @@ Current color: ${escapeHtml(color)}</div>
           renderLibrary();
           renderTabs();
           break;
+        case 'edit-library-game': { state.editingLibraryGameId=String(actionEl.dataset.appid); renderEditGameDialog(); break; }
+        case 'close-edit-game': { state.editingLibraryGameId=null; renderEditGameDialog(); break; }
+        case 'fetch-edit-steam': {
+          const appidInput = document.getElementById('edit-game-appid');
+          const statusEl = document.getElementById('edit-appid-status');
+          const val = appidInput ? appidInput.value.trim() : '';
+          if (!val || !/^\d+$/.test(val)) {
+            if (statusEl) statusEl.textContent = '(Enter numeric Steam AppID)';
+            toast('Enter a numeric Steam AppID');
+            break;
+          }
+          if (statusEl) statusEl.textContent = '(Fetching game info...)';
+          const res = await apiCall('preview_game_appid', val);
+          if (!res.ok) {
+            if (statusEl) statusEl.textContent = '(Not found on Steam)';
+            toast(res.error || 'Steam lookup failed');
+            break;
+          }
+          const game = res.game || {};
+          const nameInput = document.getElementById('edit-game-name');
+          const imageInput = document.getElementById('edit-game-image');
+          if (nameInput && game.name) nameInput.value = game.name;
+          if (imageInput && game.header_image) imageInput.value = game.header_image;
+          if (statusEl) statusEl.textContent = '✓ Game info loaded';
+          toast('Steam game recognized successfully!');
+          break;
+        }
+        case 'save-edit-game': {
+          const item = state.libraryItems.find(x => String(x.appid) === String(state.editingLibraryGameId));
+          if (!item) break;
+          const oldId = String(item.appid);
+          const name = document.getElementById('edit-game-name').value.trim();
+          const appid = document.getElementById('edit-game-appid').value.trim();
+          const image = document.getElementById('edit-game-image').value.trim();
+          if (appid && appid !== oldId && state.libraryItems.some(x => String(x.appid) === appid)) {
+            toast(`AppID ${appid} is already used by another game in your library`);
+            break;
+          }
+          const res = await apiCall('edit_game_details', oldId, appid || oldId, name, image);
+          if (!res.ok) {
+            toast(res.error || 'Failed to save changes');
+            break;
+          }
+          // Apply the override in place: no full library refresh.
+          if (name) item.name = name;
+          if (appid) item.appid = appid;
+          if (image) item.header_image = image;
+          state.selectedLibraryAppIds = state.selectedLibraryAppIds.map(x => x === oldId ? String(item.appid) : x);
+          state.editingLibraryGameId = null;
+          renderEditGameDialog();
+          sortLibraryItems();
+          renderLibrary();
+          renderTabs();
+          toast('Game details updated & cached');
+          break;
+        }
+        case 'remove-custom-game': {
+          const appid = String(actionEl.dataset.appid || '');
+          const name = actionEl.dataset.name || appid;
+          const confirmed = await showConfirm({
+            title: 'Remove game from library',
+            message: `Remove "${name}" from the library? This only removes the manually added entry — no files on disk are touched.`,
+            confirmText: 'Remove',
+          });
+          if (!confirmed) break;
+          const res = await apiCall('remove_custom_library_game', appid);
+          if (!res.ok) {
+            toast(res.error || 'Failed to remove game');
+            break;
+          }
+          state.libraryItems = state.libraryItems.filter(item => String(item.appid) !== appid);
+          state.selectedLibraryAppIds = state.selectedLibraryAppIds.filter(x => x !== appid);
+          renderLibrary();
+          renderTabs();
+          toast(`Removed "${name}" from library`);
+          break;
+        }
+        case 'open-add-library':
+          state.addLibraryModalOpen = true;
+          state.addLibraryQuery = '';
+          state.addLibrarySuggestions = [];
+          renderAddLibraryDialog();
+          break;
+        case 'close-add-library':
+          state.addLibraryModalOpen = false;
+          renderAddLibraryDialog();
+          break;
+        case 'pick-add-suggestion': {
+          const query = actionEl.dataset.name || actionEl.dataset.appid || '';
+          state.addLibraryQuery = query;
+          state.addLibrarySuggestions = [];
+          // Patch input + dropdown in place; a full re-render would flash the dialog.
+          const searchInput = document.getElementById('add-library-search-input');
+          if (searchInput) searchInput.value = query;
+          renderAddLibrarySuggestionsOnly();
+          break;
+        }
+        case 'add-library-search-submit': {
+          const query = state.addLibraryQuery.trim();
+          if (!query) { toast('Enter a game name or AppID'); break; }
+          toast('Searching and scanning files...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('add_library_search_game', query);
+          } catch (err) {
+            hideToast();
+            toast('Search failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'Game not found');
+            break;
+          }
+          if (res.no_leftovers) {
+            toast('No leftovers were found for that game');
+          } else {
+            toast(`Added "${res.game.name}" to Library!`);
+          }
+          // Keep the dialog open so more games can be added in a row;
+          // just clear the search field for the next query (patch in place
+          // so Option 2 fields are untouched and nothing flashes).
+          state.addLibraryQuery = '';
+          state.addLibrarySuggestions = [];
+          const submitSearchInput = document.getElementById('add-library-search-input');
+          if (submitSearchInput) submitSearchInput.value = '';
+          renderAddLibrarySuggestionsOnly();
+          insertLibraryItem(res.game);
+          break;
+        }
+        case 'fetch-custom-appid': {
+          const appidInput = document.getElementById('add-library-custom-appid');
+          const val = appidInput ? appidInput.value.trim() : '';
+          if (!val || !/^\d+$/.test(val)) {
+            toast('Enter a numeric AppID first');
+            break;
+          }
+          toast('Fetching game info...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('preview_game_appid', val);
+          } catch (err) {
+            hideToast();
+            toast('Lookup failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'No game found for this AppID');
+            break;
+          }
+          const game = res.game || {};
+          const nameInput = document.getElementById('add-library-custom-name');
+          const imageInput = document.getElementById('add-library-custom-image');
+          if (nameInput && game.name) nameInput.value = game.name;
+          if (imageInput && game.header_image) imageInput.value = game.header_image;
+          toast(`Recognized "${game.name || val}"`);
+          break;
+        }
+        case 'submit-custom-game': {
+          const appid = document.getElementById('add-library-custom-appid').value.trim();
+          const name = document.getElementById('add-library-custom-name').value.trim();
+          const image = document.getElementById('add-library-custom-image').value.trim();
+          const path = document.getElementById('add-library-custom-path').value.trim();
+          if (!name && !appid) { toast('Game name or AppID is required'); break; }
+          toast('Adding game and scanning files...', { sticky: true });
+          let res;
+          try {
+            res = await apiCall('add_custom_library_game', appid, name || appid, image, path);
+          } catch (err) {
+            hideToast();
+            toast('Adding failed, please try again');
+            break;
+          }
+          if (!res.ok) {
+            toast(res.error || 'Failed to add custom game');
+            break;
+          }
+          if (res.no_leftovers) {
+            toast('No leftovers were found for that game');
+          } else {
+            toast('Custom game added to library!');
+          }
+          // Keep the dialog open; just clear the custom fields for the next entry.
+          for (const id of ['add-library-custom-appid', 'add-library-custom-name', 'add-library-custom-image', 'add-library-custom-path']) {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          }
+          insertLibraryItem(res.game);
+          break;
+        }
         case 'toggle-select-game':
           toggleLibrarySelection(actionEl.dataset.appid || '');
           renderLibrary();
@@ -4237,25 +5635,6 @@ Current color: ${escapeHtml(color)}</div>
           toast('Custom theme applied');
           break;
         }
-        case 'toggle-custom-second-color': {
-          if (!state.settingsInfo) state.settingsInfo = {};
-          state.settingsInfo.custom_theme_use_second_color = !state.settingsInfo.custom_theme_use_second_color;
-          state.settingsInfo.theme = 'custom';
-          applyTheme('custom');
-          await setCustomThemeColor(state.settingsInfo.custom_theme_color || '#d946ef', {
-            color2: state.settingsInfo.custom_theme_color_2 || '#fb7185',
-            useSecond: state.settingsInfo.custom_theme_use_second_color,
-            render: false,
-            refreshEditor: false,
-          });
-          const btn = actionEl;
-          btn.classList.toggle('active', !!state.settingsInfo.custom_theme_use_second_color);
-          btn.textContent = state.settingsInfo.custom_theme_use_second_color ? 'Second Color: On' : 'Second Color: Off';
-          document.querySelectorAll('[data-action="custom-theme-color2-input"], [data-action="custom-theme-hex2-input"]').forEach(input => {
-            input.disabled = !state.settingsInfo.custom_theme_use_second_color;
-          });
-          break;
-        }
         case 'open-preset-dialog':
           state.presetName = '';
           state.presetDialogOpen = true;
@@ -4272,22 +5651,222 @@ Current color: ${escapeHtml(color)}</div>
           await saveCustomThemePreset(nameInput && nameInput.value ? nameInput.value : 'Custom Theme', color);
           break;
         }
-        case 'load-theme-preset':
-          await setCustomThemeColor(actionEl.dataset.color || '#d946ef', {
-            color2: actionEl.dataset.color2 || '#fb7185',
-            useSecond: actionEl.dataset.useSecond === '1',
-          });
+        case 'load-theme-preset': {
+          if (document.activeElement && document.activeElement.dataset.action === 'preset-rename-input') break;
+          const pName = actionEl.dataset.presetName || null;
+          if (state.loadedPresetName === pName) {
+            state.loadedPresetName = null;
+          } else {
+            state.loadedPresetName = pName;
+          }
+          state.renamingPreset = null;
+          state.renamingPresetValue = '';
+          const lPreset = ((state.settingsInfo && state.settingsInfo.custom_theme_presets) || []).find(p => p.name.toLowerCase() === String(pName || '').toLowerCase());
+          const lc1 = normalizeHexColor((lPreset && lPreset.color) || actionEl.dataset.color || '#d946ef');
+          const lc2 = normalizeHexColor((lPreset && lPreset.color2) || actionEl.dataset.color2 || '#fb7185');
+          const lus = lPreset ? !!lPreset.use_second : actionEl.dataset.useSecond === '1';
+          if (!state.settingsInfo) state.settingsInfo = {};
+          state.settingsInfo.custom_theme_color = lc1;
+          state.settingsInfo.custom_theme_color_2 = lc2;
+          state.settingsInfo.custom_theme_use_second_color = lus;
+          state.settingsInfo.theme = 'custom';
+          applyCustomThemeColor(lc1, lc2, lus);
+          applyTheme('custom');
+          try { await apiCall('set_custom_theme_color', lc1, lc2, lus); } catch {}
+          // Use lightweight update instead of full rebuild
+          if (state.customThemeEditorOpen) updateCustomThemeEditorState();
           break;
+        }
         case 'delete-theme-preset':
           await deleteCustomThemePreset(actionEl.dataset.presetName || '');
           break;
         case 'open-custom-theme-editor':
           state.customThemeEditorOpen = true;
+          await setTheme('custom');
           renderCustomThemeEditor();
           break;
         case 'close-custom-theme-editor':
           closeCustomThemeEditorAnimated();
           break;
+        case 'toggle-custom-second-color': {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!state.settingsInfo) state.settingsInfo = {};
+          const nv = !state.settingsInfo.custom_theme_use_second_color;
+          state.settingsInfo.custom_theme_use_second_color = nv;
+          applyTheme('custom');
+          // Update toggle button visual
+          actionEl.classList.toggle('active', nv);
+          actionEl.textContent = nv ? 'Second Color: On' : 'Second Color: Off';
+          // Enable/disable second color inputs
+          document.querySelectorAll('[data-action="custom-theme-color2-input"], [data-action="custom-theme-hex2-input"]').forEach(i => { i.disabled = !nv; });
+          // Persist silently, then sync the loaded preset so re-selecting
+          // it does not restore a stale second-color state.
+          setTimeout(async () => {
+            try { await apiCall('set_custom_theme_color', state.settingsInfo.custom_theme_color || '#d946ef', state.settingsInfo.custom_theme_color_2 || '#fb7185', nv); } catch {}
+            autoSavePresetColors();
+          }, 0);
+          break;
+        }
+        case 'start-edit-preset':
+          state.editingPresetName = actionEl.dataset.presetName || '';
+          renderSettings();
+          renderTabs();
+          break;
+        case 'cancel-edit-preset': {
+          const prevName = state.editingPresetName;
+          state.editingPresetName = null;
+          if (prevName) {
+            const prev = document.querySelector(`[data-preset-card="${prevName}"]`);
+            if (prev) prev.classList.remove('expanded');
+          }
+          break;
+        }
+        case 'toggle-preset-second-color': {
+          const tpName = actionEl.dataset.presetName || '';
+          const tpCard = document.querySelector(`[data-preset-card="${tpName}"]`);
+          if (!tpCard) break;
+          const tpColor2 = tpCard.querySelector('[data-action="preset-edit-color2"]');
+          if (!tpColor2) break;
+          const tpNewState = tpColor2.disabled;
+          tpColor2.disabled = !tpNewState;
+          actionEl.classList.toggle('active', tpNewState);
+          actionEl.textContent = tpNewState ? 'Second Color: On' : 'Second Color: Off';
+          break;
+        }
+        case 'save-edit-preset': {
+          const origName = actionEl.dataset.originalName || '';
+          const card = actionEl.closest('[data-preset-card]');
+          const nameInput = card ? card.querySelector('.preset-edit-name-input') : null;
+          const colorInput = card ? card.querySelector('[data-action="preset-edit-color"]') : null;
+          const color2Input = card ? card.querySelector('[data-action="preset-edit-color2"]') : null;
+          const newName = nameInput ? nameInput.value.trim() : origName;
+          const c1 = colorInput ? normalizeHexColor(colorInput.value) : normalizeHexColor(state.settingsInfo.custom_theme_color || '#d946ef');
+          const c2 = color2Input ? normalizeHexColor(color2Input.value) : normalizeHexColor(state.settingsInfo.custom_theme_color_2 || '#fb7185');
+          const useS = color2Input ? !color2Input.disabled : !!(state.settingsInfo.custom_theme_use_second_color);
+          // Update colors first
+          try {
+            const r1 = await apiCall('update_custom_theme_preset', origName, c1, c2, useS);
+            if (r1 && r1.ok) state.settingsInfo.custom_theme_presets = r1.custom_theme_presets || [];
+          } catch {}
+          // Then rename if needed
+          if (newName && newName.toLowerCase() !== origName.toLowerCase()) {
+            try {
+              const r2 = await apiCall('rename_custom_theme_preset', origName, newName);
+              if (r2 && r2.ok) state.settingsInfo.custom_theme_presets = r2.custom_theme_presets || [];
+              if (state.loadedPresetName && state.loadedPresetName.toLowerCase() === origName.toLowerCase()) {
+                state.loadedPresetName = newName;
+              }
+            } catch {}
+          }
+          state.editingPresetName = null;
+          const finalName = newName || origName;
+          state.loadedPresetName = finalName;
+          // Apply the saved colors
+          if (!state.settingsInfo) state.settingsInfo = {};
+          state.settingsInfo.custom_theme_color = c1;
+          state.settingsInfo.custom_theme_color_2 = c2;
+          state.settingsInfo.custom_theme_use_second_color = useS;
+          state.settingsInfo.theme = 'custom';
+          applyCustomThemeColor(c1, c2, useS);
+          applyTheme('custom');
+          try { await apiCall('set_custom_theme_color', c1, c2, useS); } catch {}
+          colorPickerOpen = false;
+          // Blur so renderCustomThemeEditor does a full rebuild: the
+          // lightweight focused-element path would keep showing the old name.
+          if (document.activeElement) document.activeElement.blur();
+          renderCustomThemeEditor();
+          toast('Preset saved');
+          break;
+        }
+        case 'select-preset': {
+          const spName = actionEl.dataset.presetName || '';
+          if (state.loadedPresetName === spName) {
+            state.loadedPresetName = null;
+          } else {
+            state.loadedPresetName = spName;
+            // Prefer live state over DOM dataset: lightweight updates leave
+            // the card's data-* attributes stale after main-bar edits.
+            const livePreset = ((state.settingsInfo && state.settingsInfo.custom_theme_presets) || []).find(p => p.name.toLowerCase() === spName.toLowerCase());
+            const c1 = normalizeHexColor((livePreset && livePreset.color) || actionEl.dataset.color || '#d946ef');
+            const c2 = normalizeHexColor((livePreset && livePreset.color2) || actionEl.dataset.color2 || '#fb7185');
+            const us = livePreset ? !!livePreset.use_second : actionEl.dataset.useSecond === '1';
+            if (!state.settingsInfo) state.settingsInfo = {};
+            state.settingsInfo.custom_theme_color = c1;
+            state.settingsInfo.custom_theme_color_2 = c2;
+            state.settingsInfo.custom_theme_use_second_color = us;
+            state.settingsInfo.theme = 'custom';
+            applyCustomThemeColor(c1, c2, us);
+            applyTheme('custom');
+            try { await apiCall('set_custom_theme_color', c1, c2, us); } catch {}
+            renderSettings();
+          }
+          // Use lightweight DOM update instead of full rebuild to avoid
+          // closing the color picker or losing focus inside the overlay.
+          if (state.customThemeEditorOpen) updateCustomThemeEditorState();
+          break;
+        }
+        case 'toggle-edit-preset': {
+          const pname = actionEl.dataset.presetName || '';
+          if (state.editingPresetName === pname) {
+            // Close edit mode - just remove the class, no rebuild
+            state.editingPresetName = null;
+            const card = document.querySelector(`[data-preset-card="${pname}"]`);
+            if (card) card.classList.remove('expanded');
+          } else {
+            // Close any other open edit mode first
+            if (state.editingPresetName) {
+              const prev = document.querySelector(`[data-preset-card="${state.editingPresetName}"]`);
+              if (prev) prev.classList.remove('expanded');
+            }
+            state.editingPresetName = pname;
+            const card = document.querySelector(`[data-preset-card="${pname}"]`);
+            if (card) {
+              card.classList.add('expanded');
+              setTimeout(() => {
+                const input = card.querySelector('.preset-edit-name-input');
+                if (input) { input.focus(); input.select(); }
+              }, 50);
+            }
+          }
+          break;
+        }
+          setTimeout(() => {
+            const input = document.querySelector('.preset-rename-input');
+            if (input) {
+              input.focus();
+              input.select();
+              input.addEventListener('blur', () => {
+                setTimeout(() => {
+                  if (!state.renamingPreset) return;
+                  const val = (state.renamingPresetValue || '').trim();
+                  const old = state.renamingPreset;
+                  state.renamingPreset = null;
+                  state.renamingPresetValue = '';
+                  if (val && val.toLowerCase() !== old.toLowerCase()) {
+                    renameCustomThemePreset(old, val);
+                  } else {
+                    if (state.customThemeEditorOpen) renderCustomThemeEditor();
+                  }
+                }, 180);
+              }, { once: true });
+            }
+          }, 50);
+          break;
+        case 'preset-rename-confirm':
+          // Handled by save-edit-preset now
+          break;
+        case 'set-theme-mode': {
+          const mode = actionEl.dataset.mode || 'system';
+          if (!state.settingsInfo) state.settingsInfo = {};
+          state.settingsInfo.theme_mode = mode;
+          applyThemeMode(mode);
+          // Persist
+          apiCall('set_theme_mode', mode).catch(() => {});
+          renderSettings();
+          renderTabs();
+          break;
+        }
         case 'set-font':
           await setFont(actionEl.dataset.fontId || 'inter');
           break;
@@ -4323,6 +5902,8 @@ Current color: ${escapeHtml(color)}</div>
         case 'toggle-archive':
           await toggleArchive(actionEl.dataset.appid, actionEl.dataset.archived === '1');
           break;
+        case 'backup-game': { const game=state.libraryItems.find(x=>String(x.appid)===String(actionEl.dataset.appid)); const result=await apiCall('backup_game',game||{}); if(result.cancelled)break; toast(result.ok?'Game backup created':(result.error||'Backup failed')); break; }
+        case 'backup-path': { const game=state.libraryItems.find(x=>String(x.appid)===String(state.modalGameId)) || {}; const result=await apiCall('backup_path', actionEl.dataset.path || '', {name:game.name||'',appid:game.appid||'',backup_type:actionEl.dataset.category || 'Game data'}); if(result.cancelled) break; if(!result.ok) toast(result.error || 'Backup failed'); else toast('Backup created'); break; }
         case 'open-path':
           await openPath(actionEl.dataset.path || '');
           break;
@@ -4367,6 +5948,51 @@ Current color: ${escapeHtml(color)}</div>
       }
     });
 
+    // Drag-and-drop for preset reordering
+    (function() {
+      let dragName = null;
+      document.addEventListener('dragstart', function(e) {
+        const card = e.target.closest('[data-drag-preset]');
+        if (!card) return;
+        dragName = card.dataset.dragPreset;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      document.addEventListener('dragend', function(e) {
+        document.querySelectorAll('.preset-card.dragging').forEach(c => c.classList.remove('dragging'));
+        document.querySelectorAll('.preset-card.drag-over').forEach(c => c.classList.remove('drag-over'));
+        dragName = null;
+      });
+      document.addEventListener('dragover', function(e) {
+        const card = e.target.closest('[data-drag-preset]');
+        if (!card || !dragName) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        card.classList.add('drag-over');
+      });
+      document.addEventListener('dragleave', function(e) {
+        const card = e.target.closest('[data-drag-preset]');
+        if (card) card.classList.remove('drag-over');
+      });
+      document.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        const card = e.target.closest('[data-drag-preset]');
+        if (!card || !dragName) return;
+        const dropName = card.dataset.dragPreset;
+        card.classList.remove('drag-over');
+        if (dragName === dropName) return;
+        try {
+          const r = await apiCall('reorder_custom_theme_presets', dragName, dropName);
+          if (r && r.ok) {
+            if (!state.settingsInfo) state.settingsInfo = {};
+            state.settingsInfo.custom_theme_presets = r.custom_theme_presets || [];
+            if (state.customThemeEditorOpen) renderCustomThemeEditor();
+          }
+        } catch {}
+        dragName = null;
+      });
+    })();
+
     async function bootstrap() {
       renderAll();
       state.backendReady = await waitForBackend();
@@ -4387,6 +6013,7 @@ Current color: ${escapeHtml(color)}</div>
       await loadHistory();
       await loadSettingsInfo();
       renderAll();
+      renderSettings();
       updateLibraryScrollButton();
       refreshLibrary({ background: true, keepModal: false });
       checkStartupUpdateNotice();

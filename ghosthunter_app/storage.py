@@ -42,18 +42,18 @@ class StateStore:
             self.data["archived_appids"] = []
         if not isinstance(self.data.get("search_history"), list):
             self.data["search_history"] = []
+        if not isinstance(self.data.get("excluded_games"), dict):
+            self.data["excluded_games"] = {}
         if not isinstance(self.data.get("theme"), str):
             self.data["theme"] = "neon"
         if not isinstance(self.data.get("font"), str):
             self.data["font"] = "inter"
         if not isinstance(self.data.get("custom_theme_color"), str):
             self.data["custom_theme_color"] = "#d946ef"
-        if not isinstance(self.data.get("custom_theme_color_2"), str):
-            self.data["custom_theme_color_2"] = "#fb7185"
-        if not isinstance(self.data.get("custom_theme_use_second_color"), bool):
-            self.data["custom_theme_use_second_color"] = False
         if not isinstance(self.data.get("custom_theme_presets"), list):
             self.data["custom_theme_presets"] = []
+        if not isinstance(self.data.get("font_size"), (int, float)):
+            self.data["font_size"] = 100
 
     def save(self) -> None:
         safe_write_json(STATE_FILE, self.data)
@@ -68,6 +68,18 @@ class StateStore:
         else:
             bucket.discard(str(appid))
         self.data["archived_appids"] = sorted(bucket)
+        self.save()
+
+    def excluded_games(self) -> dict[str, Any]:
+        return dict(self.data.get("excluded_games", {}))
+
+    def set_excluded(self, game: dict[str, Any], excluded: bool) -> None:
+        key = str(game.get("appid") or "")
+        if not key: return
+        bucket = self.excluded_games()
+        if excluded: bucket[key] = {"appid":key,"name":game.get("name",key),"header_image":game.get("header_image","")}
+        else: bucket.pop(key, None)
+        self.data["excluded_games"] = bucket
         self.save()
 
     def history(self) -> list[dict[str, Any]]:
@@ -99,6 +111,15 @@ class StateStore:
         self.data["theme"] = str(theme_name or "neon")
         self.save()
 
+    def theme_mode(self) -> str:
+        value = str(self.data.get("theme_mode", "system"))
+        return value if value in ("system", "dark", "light") else "system"
+
+    def set_theme_mode(self, mode: str) -> None:
+        value = str(mode or "system")
+        self.data["theme_mode"] = value if value in ("system", "dark", "light") else "system"
+        self.save()
+
     def font(self) -> str:
         return str(self.data.get("font", "inter"))
 
@@ -127,20 +148,23 @@ class StateStore:
         self.data["custom_theme_use_second_color"] = bool(enabled)
         self.save()
 
-    def custom_theme_presets(self) -> list[dict[str, str]]:
+    def custom_theme_presets(self) -> list[dict[str, Any]]:
         presets = self.data.get("custom_theme_presets", [])
         if not isinstance(presets, list):
             return []
-        result: list[dict[str, str]] = []
+        result: list[dict[str, Any]] = []
         for item in presets:
             if not isinstance(item, dict):
                 continue
             name = str(item.get("name", "")).strip()
             color = str(item.get("color", "")).strip()
-            color2 = str(item.get("color2", "#fb7185")).strip()
-            use_second = bool(item.get("use_second", False))
             if name and color:
-                result.append({"name": name, "color": color, "color2": color2, "use_second": use_second})
+                entry: dict[str, Any] = {"name": name, "color": color}
+                color2 = str(item.get("color2", "")).strip()
+                if color2:
+                    entry["color2"] = color2
+                entry["use_second"] = bool(item.get("use_second"))
+                result.append(entry)
         return result
 
     def add_custom_theme_preset(self, name: str, color: str, color2: str = "#fb7185", use_second: bool = False) -> None:
@@ -148,7 +172,7 @@ class StateStore:
         clean_color = str(color or "#d946ef").strip()
         clean_color2 = str(color2 or "#fb7185").strip()
         presets = [item for item in self.custom_theme_presets() if item.get("name", "").lower() != clean_name.lower()]
-        presets.insert(0, {"name": clean_name, "color": clean_color, "color2": clean_color2, "use_second": bool(use_second)})
+        presets.append({"name": clean_name, "color": clean_color, "color2": clean_color2, "use_second": bool(use_second)})
         self.data["custom_theme_presets"] = presets[:12]
         self.save()
 
@@ -159,3 +183,63 @@ class StateStore:
             if item.get("name", "").lower() != clean_name
         ]
         self.save()
+
+    def font_size(self) -> int:
+        value = self.data.get("font_size", 100)
+        try:
+            return max(75, min(130, int(value)))
+        except (TypeError, ValueError):
+            return 100
+
+    def set_font_size(self, size: int) -> None:
+        try:
+            clamped = max(75, min(130, int(size)))
+        except (TypeError, ValueError):
+            clamped = 100
+        self.data["font_size"] = clamped
+        self.save()
+
+    def game_overrides(self) -> dict[str, Any]:
+        return dict(self.data.get("game_overrides", {}))
+
+    def set_game_override(self, old_appid: str, new_appid: str, name: str, header_image: str) -> None:
+        overrides = self.game_overrides()
+        overrides[str(old_appid)] = {
+            "appid": str(new_appid or old_appid),
+            "name": str(name or ""),
+            "header_image": str(header_image or ""),
+        }
+        self.data["game_overrides"] = overrides
+        self.save()
+
+    def custom_library_games(self) -> dict[str, Any]:
+        return dict(self.data.get("custom_library_games", {}))
+
+    def add_custom_library_game(self, game_record: dict[str, Any]) -> None:
+        appid = str(game_record.get("appid") or "").strip()
+        if not appid:
+            return
+        custom = self.custom_library_games()
+        custom[appid] = game_record
+        self.data["custom_library_games"] = custom
+        self.save()
+
+    def remove_custom_library_game(self, appid: str) -> None:
+        custom = self.custom_library_games()
+        if str(appid) in custom:
+            custom.pop(str(appid), None)
+            self.data["custom_library_games"] = custom
+            self.save()
+
+    def remove_game_override(self, appid: str) -> None:
+        key = str(appid)
+        overrides = self.game_overrides()
+        changed = False
+        for old_appid in list(overrides.keys()):
+            entry = overrides.get(old_appid) or {}
+            if old_appid == key or str(entry.get("appid") or "") == key:
+                overrides.pop(old_appid, None)
+                changed = True
+        if changed:
+            self.data["game_overrides"] = overrides
+            self.save()
