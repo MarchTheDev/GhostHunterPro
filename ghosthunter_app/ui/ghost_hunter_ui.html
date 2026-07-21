@@ -3995,6 +3995,7 @@
                 <h2 class="result-title">${escapeHtml(result.game.name)}</h2>
                 <div class="tags">
                   <span class="tag cyan">#${escapeHtml(result.game.appid)}</span>
+                  ${String(result.game.appid).match(/^\d+$/) ? `<button class="tiny-btn" data-action="open-steamdb" data-appid="${escapeHtml(result.game.appid)}" title="Open on SteamDB" style="align-self:center;">↗</button>` : ''}
                   ${(result.game.developers || []).length ? `<span class="tag purple">${escapeHtml(result.game.developers[0])}</span>` : ''}
                   ${(result.game.publishers || []).length ? `<span class="tag orange">${escapeHtml(result.game.publishers[0])}</span>` : ''}
                 </div>
@@ -4002,8 +4003,9 @@
                 <div class="summary-line" style="margin-top:8px;">${escapeHtml(result.game.short_description || '')}</div>
                 <div class="modal-actions" style="margin-top:16px;">
                   <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(result.game.appid)}">Open on SteamDB</button>
-                  <button class="btn primary" data-action="home-delete-all">Delete All</button>
+                  <button class="btn accent" data-action="home-delete-all">Delete All</button>
                   <button class="btn" data-action="home-delete-selected">Delete Selected</button>
+                  <button class="btn" data-action="home-backup-all">Backup All</button>
                   <button class="btn" data-action="home-copy-selected">Copy Selected Paths</button>
                 </div>
               </div>
@@ -4045,7 +4047,7 @@
               <div class="search-inner">
                 <div class="search-icon">${icon('gamepad')}</div>
                 <input class="search-input" id="home-search-input" autocomplete="off" value="${escapeHtml(state.homeQuery)}" placeholder="Enter game name or Steam AppID..." />
-                <button class="btn primary pill" type="submit" ${state.homeLoading ? 'disabled' : ''}>${state.homeLoading ? 'Scanning...' : 'Hunt'}</button>
+                <button class="btn accent pill" type="submit" ${state.homeLoading ? 'disabled' : ''}>${state.homeLoading ? 'Scanning...' : 'Hunt'}</button>
               </div>
             </form>
             ${state.homeSuggestions.length ? `
@@ -4066,7 +4068,7 @@
             <button class="btn hero-link" data-action="switch-tab" data-tab="library">Browse Library</button>
           </div>
         </div>
-        ${result ? `<div class="home-tools"><button class="btn primary" data-action="home-clear">${icon('x')} Close</button></div>` : ""}
+        ${result ? `<div class="home-tools"><button class="btn accent" data-action="home-clear">${icon('x')} Close</button></div>` : ""}
         ${resultsHtml}
         ${!result && state.homeLoading ? `
           <div class="loading-state card">
@@ -4107,7 +4109,7 @@
         <div class="edit-game-dialog">
           <h3>Edit Game Details</h3>
           <p>Enter a Steam AppID to automatically recognize and refresh the official game name and cover. Name and cover are optional personal display overrides.</p>
-          <label class="edit-game-field">STEAM APPID <span id="edit-appid-status" style="color:var(--cyan);font-weight:600;"></span>
+          <label class="edit-game-field">APPID <span id="edit-appid-status" style="color:var(--cyan);font-weight:600;"></span>
             <div style="display:flex;gap:8px;">
               <input id="edit-game-appid" data-edit-appid value="${escapeHtml(item.appid)}" placeholder="Enter AppID for auto-refresh" style="flex:1;" />
               <button class="btn" data-action="fetch-edit-steam" style="padding:8px 12px;font-size:12px;">Fetch ID</button>
@@ -4693,6 +4695,9 @@
                   <h3 class="modal-title">${escapeHtml(game.name)}</h3>
                   <div class="tags" style="margin-top:12px;">
                     <span class="tag cyan">#${escapeHtml(game.appid)}</span>
+                    ${String(game.appid).match(/^\d+$/) ? `<button class="tiny-btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}" title="Open on SteamDB" style="align-self:center;">↗</button>` : ''}
+                    ${(game.developers || []).length ? `<span class="tag purple">${escapeHtml(game.developers[0])}</span>` : ''}
+                    ${(game.publishers || []).length ? `<span class="tag orange">${escapeHtml(game.publishers[0])}</span>` : ''}
                     ${game.archived ? `<span class="tag red">Hidden</span>` : game.has_leftovers ? `<span class="tag red">Leftovers found</span>` : ''}
                     ${game.installed ? `<span class="tag legit">Installed: ${escapeHtml(formatInstalledSources(game.installed_sources || []))}</span>` : ''}
                     <span class="tag">${game.path_count} path${game.path_count === 1 ? '' : 's'}</span>
@@ -4705,7 +4710,7 @@
                 <button class="btn" data-action="open-steamdb" data-appid="${escapeHtml(game.appid)}">Open on SteamDB</button>
                 <button class="btn accent" data-action="modal-delete-all" data-appid="${escapeHtml(game.appid)}">Delete All</button>
                 <button class="btn" data-action="modal-delete-selected" data-appid="${escapeHtml(game.appid)}">Delete Selected</button>
-                <button class="btn" data-action="backup-game" data-appid="${escapeHtml(game.appid)}">Backup All</button><button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Show this Game' : 'Hide this Game'}</button>
+                <button class="btn" data-action="backup-game" data-appid="${escapeHtml(game.appid)}">Backup All</button><button class="btn" data-action="modal-copy-selected">Copy Selected Paths</button><button class="btn ${game.archived ? 'good' : ''}" data-action="toggle-archive" data-appid="${escapeHtml(game.appid)}" data-archived="${game.archived ? '1' : '0'}">${game.archived ? 'Show this Game' : 'Hide this Game'}</button>
               </div>
             </div>
           </div>
@@ -5931,12 +5936,27 @@
           else copyText(paths.join('\n'));
           break;
         }
+        case 'modal-copy-selected': {
+          const paths = selectedModalPaths();
+          if (!paths.length) toast('Nothing selected');
+          else copyText(paths.join('\n'));
+          break;
+        }
         case 'home-delete-selected':
           await deletePaths(selectedHomePaths(), { refreshHome: true });
           break;
         case 'home-delete-all':
           await deletePaths((state.homeResult?.paths || []).map(item => item.path), { refreshHome: true });
           break;
+        case 'home-backup-all': {
+          const homeRes = state.homeResult;
+          if (!homeRes || !(homeRes.paths || []).length) { toast('No paths available to back up'); break; }
+          const payload = { ...(homeRes.game || {}), paths: homeRes.paths || [] };
+          const backupResult = await apiCall('backup_game', payload);
+          if (backupResult.cancelled) break;
+          toast(backupResult.ok ? 'Game backup created' : (backupResult.error || 'Backup failed'));
+          break;
+        }
         case 'modal-delete-selected':
           await deletePaths(selectedModalPaths(), { refreshLibrary: true });
           break;
