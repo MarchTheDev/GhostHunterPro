@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import html
 import json
 import os
 import re
@@ -11,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import PCGW_CACHE_FILE
-from .utils import normalize_name, path_size, placeholder_header_image, safe_read_json, safe_write_json
+from .utils import get_name_variations, normalize_name, path_size, placeholder_header_image, safe_read_json, safe_write_json
 
 
 class SaveScanner:
@@ -66,28 +65,6 @@ class SaveScanner:
                 r"{APPDATA}\IO Interactive\HITMAN3",
             ],
         },
-        "assettocorsa": {
-            "name": "Assetto Corsa",
-            "appid": "244210",
-            "aliases": ["Assetto Corsa", "assettocorsa"],
-            "patterns": [
-                r"{DOCS}\Assetto Corsa",
-                r"{DOCS}\Assetto Corsa\cfg",
-                r"{DOCS}\Assetto Corsa\setups",
-                r"{DOCS}\Assetto Corsa\replay",
-            ],
-        },
-        "assettocorsacompetizione": {
-            "name": "Assetto Corsa Competizione",
-            "appid": "805550",
-            "aliases": ["Assetto Corsa Competizione", "ACC"],
-            "patterns": [
-                r"{DOCS}\Assetto Corsa Competizione",
-                r"{DOCS}\Assetto Corsa Competizione\Config",
-                r"{DOCS}\Assetto Corsa Competizione\Savegames",
-                r"{DOCS}\Assetto Corsa Competizione\Customs",
-            ],
-        },
         "assettocorsaevo": {
             "name": "Assetto Corsa EVO",
             "appid": "3058630",
@@ -114,7 +91,7 @@ class SaveScanner:
             "aliases": [
                 "LEGO Batman Legacy of the Dark Knight",
                 "LEGO Batman - Legacy of the Dark Knight",
-                "LEGO® Batman™: Legacy of the Dark Knight",
+                "LEGO\u00ae Batman\u2122: Legacy of the Dark Knight",
                 "Dinner",
             ],
             "patterns_only": True,
@@ -133,112 +110,6 @@ class SaveScanner:
                 r"{LOCAL}\Dinner\Saved\Config\Windows",
             ],
         },
-        "thelastofusparti": {
-            "name": "The Last of Us Part I",
-            "appid": "1888930",
-            "aliases": [
-                "The Last of Us Part 1",
-                "The Last of Us Part I",
-                "The Last of Us™ Part I",
-                "The Last of Us Part I Remake",
-                "TLOU1",
-                "TLOU Part I",
-            ],
-            "patterns": [
-                r"{SAVEDGAMES}\The Last of Us Part I",
-                r"{SAVEDGAMES}\The Last of Us Part I\users\*\savedata",
-                r"{SAVEDGAMES}\The Last of Us Part I\users\*\screeninfo.cfg",
-                r"{DOCS}\The Last of Us Part I",
-            ],
-        },
-        "thelastofuspart1": {
-            "name": "The Last of Us Part I",
-            "appid": "1888930",
-            "aliases": ["The Last of Us Part 1", "The Last of Us Part I", "The Last of Us™ Part I"],
-            "patterns": [
-                r"{SAVEDGAMES}\The Last of Us Part I",
-                r"{SAVEDGAMES}\The Last of Us Part I\users\*\savedata",
-                r"{SAVEDGAMES}\The Last of Us Part I\users\*\screeninfo.cfg",
-                r"{DOCS}\The Last of Us Part I",
-            ],
-        },
-        "thelastofuspartiiremastered": {
-            "name": "The Last of Us Part II Remastered",
-            "appid": "2531310",
-            "aliases": [
-                "The Last of Us Part II",
-                "The Last of Us Part 2",
-                "The Last of Us Part 2 Remastered",
-                "TLOU2",
-                "TLOU Part II",
-            ],
-            "patterns": [
-                r"{DOCS}\The Last of Us Part II",
-                r"{DOCS}\The Last of Us Part II\*\savedata",
-                r"{SAVEDGAMES}\The Last of Us Part II",
-                r"{SAVEDGAMES}\The Last of Us Part II\*\savedata",
-            ],
-        },
-        "thelastofuspartii": {
-            "name": "The Last of Us Part II Remastered",
-            "appid": "2531310",
-            "aliases": ["The Last of Us Part II", "The Last of Us Part 2"],
-            "patterns": [
-                r"{DOCS}\The Last of Us Part II",
-                r"{DOCS}\The Last of Us Part II\*\savedata",
-                r"{SAVEDGAMES}\The Last of Us Part II",
-                r"{SAVEDGAMES}\The Last of Us Part II\*\savedata",
-            ],
-        },
-        "kingdomcome2": {
-            "name": "Kingdom Come: Deliverance II",
-            "appid": "1771300",
-            "aliases": [
-                "Kingdom Come Deliverance 2",
-                "Kingdom Come Deliverance II",
-                "Kingdom Come: Deliverance 2",
-                "Kingdom Come: Deliverance II",
-                "kingdomcome2",
-                "KCD2",
-            ],
-            "patterns": [
-                r"{SAVEDGAMES}\kingdomcome2",
-                r"{SAVEDGAMES}\kingdomcome2\saves",
-                r"{SAVEDGAMES}\kingdomcome2\profiles\default",
-            ],
-        },
-        "kingdomcomedeliveranceii": {
-            "name": "Kingdom Come: Deliverance II",
-            "appid": "1771300",
-            "aliases": ["Kingdom Come Deliverance 2", "kingdomcome2", "KCD2"],
-            "patterns": [
-                r"{SAVEDGAMES}\kingdomcome2",
-                r"{SAVEDGAMES}\kingdomcome2\saves",
-                r"{SAVEDGAMES}\kingdomcome2\profiles\default",
-            ],
-        },
-        "cairn": {
-            "name": "Cairn",
-            "appid": "1588550",
-            "aliases": ["Cairn_RETAIL", "Cairn RETAIL", "TheGameBakers Cairn"],
-            "patterns": [
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\SAVEGAMES\RETAIL\STORY",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\PERSISTENT\PLAYER",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn\SAVEGAMES\STORY",
-            ],
-        },
-        "cairnretail": {
-            "name": "Cairn",
-            "appid": "1588550",
-            "aliases": ["Cairn_RETAIL", "Cairn RETAIL"],
-            "patterns": [
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\SAVEGAMES\RETAIL\STORY",
-                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\PERSISTENT\PLAYER",
-            ],
-        },
         "dispatch": {
             "name": "Dispatch",
             "aliases": ["Dispatch"],
@@ -251,16 +122,638 @@ class SaveScanner:
                 r"{DOCS}\My Games\Dispatch",
             ],
         },
+        # ── Assetto Corsa ──────────────────────────────────────────────
+        "assettocorsa": {
+            "name": "Assetto Corsa",
+            "appid": "244210",
+            "aliases": ["Assetto Corsa"],
+            "save_and_config": True,
+            "patterns": [
+                r"{DOCS}\Assetto Corsa",
+                r"{DOCS}\Assetto Corsa\cfg",
+                r"{DOCS}\Assetto Corsa\setups",
+                r"{DOCS}\Assetto Corsa\replay",
+            ],
+        },
+        "assettocorsacompetizione": {
+            "name": "Assetto Corsa Competizione",
+            "appid": "805550",
+            "aliases": ["Assetto Corsa Competizione", "ACC"],
+            "save_and_config": True,
+            "patterns": [
+                r"{DOCS}\Assetto Corsa Competizione",
+                r"{DOCS}\Assetto Corsa Competizione\Config",
+                r"{DOCS}\Assetto Corsa Competizione\Savegames",
+                r"{DOCS}\Assetto Corsa Competizione\Customs",
+            ],
+        },
+        # ── The Last of Us ─────────────────────────────────────────────
+        "thelastofusparti": {
+            "name": "The Last of Us Part I",
+            "appid": "1888930",
+            "aliases": ["The Last of Us Part 1", "TLOU1", "TLOU Part I"],
+            "save_and_config": True,
+            "patterns": [
+                r"{SAVEDGAMES}\The Last of Us Part I",
+                r"{SAVEDGAMES}\The Last of Us Part I\users\*\savedata",
+                r"{DOCS}\The Last of Us Part I",
+            ],
+        },
+        "thelastofuspartiiremastered": {
+            "name": "The Last of Us Part II Remastered",
+            "appid": "2531310",
+            "aliases": ["The Last of Us Part 2", "TLOU2", "TLOU Part II"],
+            "save_and_config": True,
+            "patterns": [
+                r"{DOCS}\The Last of Us Part II",
+                r"{DOCS}\The Last of Us Part II\*\savedata",
+                r"{SAVEDGAMES}\The Last of Us Part II",
+                r"{SAVEDGAMES}\The Last of Us Part II\*\savedata",
+            ],
+        },
+        # ── Kingdom Come ───────────────────────────────────────────────
+        "kingdomcome2": {
+            "name": "Kingdom Come: Deliverance II",
+            "appid": "1771300",
+            "aliases": ["Kingdom Come Deliverance 2", "KCD2"],
+            "save_and_config": True,
+            "patterns": [
+                r"{SAVEDGAMES}\kingdomcome2",
+                r"{SAVEDGAMES}\kingdomcome2\saves",
+                r"{SAVEDGAMES}\kingdomcome2\profiles\default",
+            ],
+        },
+        # ── Cairn ──────────────────────────────────────────────────────
+        "cairn": {
+            "name": "Cairn",
+            "appid": "1588550",
+            "aliases": ["Cairn_RETAIL", "Cairn RETAIL"],
+            "save_and_config": True,
+            "patterns": [
+                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL",
+                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\SAVEGAMES\RETAIL\STORY",
+                r"{SAVEDGAMES}\TheGameBakers\Cairn_RETAIL\PERSISTENT\PLAYER",
+                r"{SAVEDGAMES}\TheGameBakers\Cairn",
+            ],
+        },
+        # ── FromSoftware ────────────────────────────────────────────────
+        "eldenring": {
+            "name": "Elden Ring",
+            "appid": "1245620",
+            "aliases": ["Elden Ring", "ELDEN RING"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\EldenRing"],
+        },
+        "sekiro": {
+            "name": "Sekiro: Shadows Die Twice",
+            "appid": "814380",
+            "aliases": ["Sekiro", "Sekiro Shadows Die Twice"],
+            "patterns": [r"{APPDATA}\Sekiro"],
+        },
+        "darksoulsiii": {
+            "name": "DARK SOULS III",
+            "appid": "374320",
+            "aliases": ["Dark Souls 3", "Dark Souls III", "DS3"],
+            "patterns": [r"{APPDATA}\DarkSoulsIII"],
+        },
+        "darksoulsii": {
+            "name": "DARK SOULS II",
+            "appid": "236430",
+            "aliases": ["Dark Souls 2", "Dark Souls II", "DS2"],
+            "patterns": [r"{APPDATA}\DarkSoulsII"],
+        },
+        "armoredcore6": {
+            "name": "ARMORED CORE VI",
+            "appid": "1888160",
+            "aliases": ["Armored Core 6", "Armored Core VI", "AC6", "ACVI"],
+            "patterns": [r"{APPDATA}\ArmoredCore6"],
+        },
+        # ── Supergiant ─────────────────────────────────────────────────
+        "hades": {
+            "name": "Hades",
+            "appid": "1145360",
+            "aliases": ["Hades"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\Hades"],
+        },
+        "hadesii": {
+            "name": "Hades II",
+            "appid": "1145350",
+            "aliases": ["Hades 2", "Hades II"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\HadesII"],
+        },
+        "bastion": {
+            "name": "Bastion",
+            "appid": "107100",
+            "aliases": ["Bastion"],
+            "patterns": [r"{LOCAL}\Bastion"],
+        },
+        # ── CD Projekt Red ──────────────────────────────────────────────
+        "cyberpunk2077": {
+            "name": "Cyberpunk 2077",
+            "appid": "1091500",
+            "aliases": ["Cyberpunk 2077", "Cyberpunk", "CP2077", "CP77"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\CD Projekt Red\Cyberpunk 2077"],
+        },
+        "thewitcher3": {
+            "name": "The Witcher 3: Wild Hunt",
+            "appid": "292030",
+            "aliases": ["The Witcher 3", "Witcher 3", "TW3"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\CD Projekt Red\witcher3"],
+        },
+        # ── Larian Studios ──────────────────────────────────────────────
+        "baldursgate3": {
+            "name": "Baldur's Gate 3",
+            "appid": "1086940",
+            "aliases": ["Baldurs Gate 3", "Baldur's Gate 3", "BG3"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Larian Studios\Baldur's Gate 3",
+                r"{LOCAL}\Larian Studios\Baldurs Gate 3",
+            ],
+        },
+        "divinityoriginalsin2": {
+            "name": "Divinity: Original Sin 2",
+            "appid": "435150",
+            "aliases": ["Divinity Original Sin 2", "DOS2"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Larian Studios\Divinity Original Sin 2"],
+        },
+        # ── Bethesda / id ───────────────────────────────────────────────
+        "skyrim": {
+            "name": "The Elder Scrolls V: Skyrim",
+            "appid": "72850",
+            "aliases": ["Skyrim", "Skyrim Special Edition", "Skyrim SE", "TESV"],
+            "patterns": [
+                r"{LOCAL}\Skyrim Special Edition",
+                r"{DOCS}\My Games\Skyrim Special Edition",
+                r"{DOCS}\My Games\Skyrim",
+            ],
+        },
+        "fallout4": {
+            "name": "Fallout 4",
+            "appid": "377160",
+            "aliases": ["Fallout 4", "FO4"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Fallout4",
+                r"{DOCS}\My Games\Fallout4",
+            ],
+        },
+        "fallout76": {
+            "name": "Fallout 76",
+            "appid": "1151340",
+            "aliases": ["Fallout 76", "FO76"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Fallout76",
+                r"{DOCS}\My Games\Fallout 76",
+                r"{DOCS}\My Games\Fallout76",
+            ],
+        },
+        "starfield": {
+            "name": "Starfield",
+            "appid": "1716740",
+            "aliases": ["Starfield"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Starfield",
+                r"{DOCS}\My Games\Starfield",
+            ],
+        },
+        "doometernal": {
+            "name": "DOOM Eternal",
+            "appid": "782330",
+            "aliases": ["DOOM Eternal", "Doom Eternal"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\id Software\DOOMEternal"],
+        },
+        # ── Rockstar ────────────────────────────────────────────────────
+        "gtav": {
+            "name": "Grand Theft Auto V",
+            "appid": "271590",
+            "aliases": ["GTA 5", "GTA V", "GTA5", "Grand Theft Auto V"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Rockstar Games\GTA V",
+                r"{DOCS}\Rockstar Games\GTA V",
+            ],
+        },
+        "rdr2": {
+            "name": "Red Dead Redemption 2",
+            "appid": "1174180",
+            "aliases": ["Red Dead Redemption 2", "RDR2"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Rockstar Games\Red Dead Redemption 2",
+                r"{DOCS}\Rockstar Games\RDR2",
+            ],
+        },
+        # ── ConcernedApe / indie ────────────────────────────────────────
+        "stardewvalley": {
+            "name": "Stardew Valley",
+            "appid": "413150",
+            "aliases": ["Stardew Valley", "Stardew"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\StardewValley"],
+        },
+        "terraria": {
+            "name": "Terraria",
+            "appid": "105600",
+            "aliases": ["Terraria"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Terraria",
+                r"{DOCS}\My Games\Terraria",
+            ],
+        },
+        "hollowknight": {
+            "name": "Hollow Knight",
+            "appid": "367520",
+            "aliases": ["Hollow Knight", "HK"],
+            "save_and_config": True,
+            "patterns": [r"{LOCALLOW}\Team Cherry\Hollow Knight"],
+        },
+        "celeste": {
+            "name": "Celeste",
+            "appid": "504230",
+            "aliases": ["Celeste"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Celeste"],
+        },
+        "factorio": {
+            "name": "Factorio",
+            "appid": "427520",
+            "aliases": ["Factorio"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\Factorio"],
+        },
+        "minecraft": {
+            "name": "Minecraft",
+            "aliases": ["Minecraft", "Minecraft Java Edition"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\.minecraft"],
+        },
+        # ── Multiplayer / live-service ──────────────────────────────────
+        "deeprockgalactic": {
+            "name": "Deep Rock Galactic",
+            "appid": "548430",
+            "aliases": ["Deep Rock Galactic", "DRG"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Deep Rock Galactic"],
+        },
+        "valheim": {
+            "name": "Valheim",
+            "appid": "892970",
+            "aliases": ["Valheim"],
+            "save_and_config": True,
+            "patterns": [r"{LOCALLOW}\IronGate\Valheim"],
+        },
+        "lethalcompany": {
+            "name": "Lethal Company",
+            "appid": "1966720",
+            "aliases": ["Lethal Company"],
+            "save_and_config": True,
+            "patterns": [r"{LOCALLOW}\ZeekerssRBLX\Lethal Company"],
+        },
+        "palworld": {
+            "name": "Palworld",
+            "appid": "1623730",
+            "aliases": ["Palworld"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Pal\Saved"],
+        },
+        "helldivers2": {
+            "name": "HELLDIVERS 2",
+            "appid": "553850",
+            "aliases": ["Helldivers 2", "HELLDIVERS 2", "HD2"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\Arrowhead\Helldivers2"],
+        },
+        "nomanssky": {
+            "name": "No Man's Sky",
+            "appid": "275850",
+            "aliases": ["No Man's Sky", "No Mans Sky", "NMS"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\HelloGames\NMS"],
+        },
+        "satisfactory": {
+            "name": "Satisfactory",
+            "appid": "526870",
+            "aliases": ["Satisfactory"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\FactoryGame\Saved"],
+        },
+        "subnautica": {
+            "name": "Subnautica",
+            "appid": "264710",
+            "aliases": ["Subnautica"],
+            "save_and_config": True,
+            "patterns": [
+                r"{LOCAL}\Subnautica",
+                r"{APPDATA}\Unknown Worlds\Subnautica",
+            ],
+        },
+        "monsterhunterworld": {
+            "name": "Monster Hunter: World",
+            "appid": "582010",
+            "aliases": ["Monster Hunter World", "MHW"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\CAPCOM\MonsterHunterWorld"],
+        },
+        "monsterhunterrise": {
+            "name": "Monster Hunter Rise",
+            "appid": "1446780",
+            "aliases": ["Monster Hunter Rise", "MHRise", "MHR"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\CAPCOM\MonsterHunterRise"],
+        },
+        "monsterhunterwilds": {
+            "name": "Monster Hunter Wilds",
+            "appid": "2246340",
+            "aliases": ["Monster Hunter Wilds", "MHWilds", "MHWi"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\CAPCOM\MonsterHunterWilds"],
+        },
+        # ── EA / Ubisoft ────────────────────────────────────────────────
+        "apexlegends": {
+            "name": "Apex Legends",
+            "appid": "1172470",
+            "aliases": ["Apex Legends", "Apex"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Respawn\Apex"],
+        },
+        "thecrewmotorfest": {
+            "name": "The Crew Motorfest",
+            "aliases": ["The Crew Motorfest"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Ubisoft Game Launcher\savegame_storage"],
+        },
+        # ── Remedy ──────────────────────────────────────────────────────
+        "control": {
+            "name": "Control",
+            "appid": "870780",
+            "aliases": ["Control"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Remedy\Control"],
+        },
+        "alanwake2": {
+            "name": "Alan Wake 2",
+            "appid": "1088850",
+            "aliases": ["Alan Wake 2", "AW2"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Remedy\AlanWake2"],
+        },
+        # ── Misc popular ────────────────────────────────────────────────
+        "minecraftdungeons": {
+            "name": "Minecraft Dungeons",
+            "appid": "1672970",
+            "aliases": ["Minecraft Dungeons"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Mojang\Minecraft Dungeons"],
+        },
+        "godofwar": {
+            "name": "God of War",
+            "appid": "1593500",
+            "aliases": ["God of War", "God of War 2018"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\GodOfWar"],
+        },
+        "godofwarragnarok": {
+            "name": "God of War Ragnar\u00f6k",
+            "appid": "2322010",
+            "aliases": ["God of War Ragnarok", "God of War Ragnarok 2022"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\GodOfWarRagnarok"],
+        },
+        "horizonzerodawn": {
+            "name": "Horizon Zero Dawn",
+            "appid": "1151640",
+            "aliases": ["Horizon Zero Dawn", "HZD"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\HorizonZeroDawn"],
+        },
+        "thehuntshowdown": {
+            "name": "Hunt: Showdown 1896",
+            "appid": "594650",
+            "aliases": ["Hunt Showdown", "Hunt: Showdown", "Hunt"],
+            "save_and_config": True,
+            "patterns": [r"{USERPROFILE}\Saved Games\Hunt Showdown 1896"],
+        },
+        "forzahorizon5": {
+            "name": "Forza Horizon 5",
+            "appid": "1551360",
+            "aliases": ["Forza Horizon 5", "FH5"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Packages\Microsoft.624F8B84B80*"],
+        },
+        "seaofthieves": {
+            "name": "Sea of Thieves",
+            "appid": "1172620",
+            "aliases": ["Sea of Thieves", "SoT"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Packages\Microsoft.SeaofThieves*"],
+        },
+        "deathstranding": {
+            "name": "Death Stranding",
+            "appid": "1190460",
+            "aliases": ["Death Stranding", "Death Stranding DC"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\KojimaProductions"],
+        },
+        "liesofp": {
+            "name": "Lies of P",
+            "appid": "1627720",
+            "aliases": ["Lies of P"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Lies of P"],
+        },
+        "returnal": {
+            "name": "Returnal",
+            "appid": "1649080",
+            "aliases": ["Returnal"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Returnal"],
+        },
+        "dragonsdogma2": {
+            "name": "Dragon's Dogma 2",
+            "appid": "2054970",
+            "aliases": ["Dragons Dogma 2", "Dragon's Dogma 2", "DD2"],
+            "save_and_config": True,
+            "patterns": [r"{APPDATA}\Dragons Dogma 2"],
+        },
+        "warframe": {
+            "name": "Warframe",
+            "appid": "230410",
+            "aliases": ["Warframe"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Warframe"],
+        },
+        "pathofexile": {
+            "name": "Path of Exile",
+            "appid": "238960",
+            "aliases": ["Path of Exile", "POE"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\GrindingGearGames\Path of Exile"],
+        },
+        "pathofexile2": {
+            "name": "Path of Exile 2",
+            "appid": "2694490",
+            "aliases": ["Path of Exile 2", "POE2"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\GrindingGearGames\Path of Exile 2"],
+        },
+        # Curated LocalLow layouts verified from real user installations.
+        # Engine/store-aware paths discovered from real installations. These
+        # remain exact rules, not arbitrary LocalLow folder guesses.
+        "catobutteredcat": {
+            "name": "CATO: Buttered Cat", "appid": "1999520",
+            "aliases": ["CATO", "CATO: Buttered Cat"],
+            "patterns": [r"{LOCALLOW}\Team Woll\CATO"],
+        },
+        "fearstofathomscratchcreek": {
+            "name": "Fears to Fathom - Scratch Creek", "appid": "4121170",
+            "aliases": ["Fears to Fathom - Scratch Creek"],
+            "patterns": [r"{LOCALLOW}\Rayll Studios\Fears to Fathom - Scratch Creek"],
+        },
+        "plagueincevolved": {
+            "name": "Plague Inc: Evolved", "appid": "246620",
+            "aliases": ["Plague Inc Evolved", "Plague Inc. Evolved"],
+            "patterns": [r"{LOCAL}\Ndemic Creations\Plague Inc. Evolved"],
+        },
+        "deathstranding2": {
+            "name": "DEATH STRANDING 2: ON THE BEACH", "appid": "3280350",
+            "aliases": ["DEATH STRANDING 2 ON THE BEACH"],
+            "patterns": [r"{LOCAL}\DEATH STRANDING 2 - ON THE BEACH"],
+        },
+        "towntocity": {
+            "name": "Town To City", "appid": "3115220",
+            "aliases": ["Town To City", "TownToCity"],
+            "patterns": [r"{LOCAL}\TownToCity"],
+        },
+        "wildwestdynasty": {
+            "name": "Wild West Dynasty", "appid": "1329880",
+            "aliases": ["Wild West Dynasty", "wwd"],
+            "patterns": [r"{LOCALLOW}\MPS\wwd"],
+        },
+        "goingmedieval": {
+            "name": "Going Medieval", "appid": "1029780",
+            "aliases": ["Going Medieval", "Foxy Voxel_Going Medieval"],
+            "patterns": [r"{LOCALLOW}\Unity\Foxy Voxel_Going Medieval"],
+        },
+        "pcbuildingsimulator2": {
+            "name": "PC Building Simulator 2",
+            "aliases": ["PC Building Simulator 2", "PCBS2"],
+            "patterns": [r"{LOCALLOW}\Epic Games Publishing\PCBS2", r"{LOCAL}\PCBS2\Saved\SaveGames"],
+        },
+        "mecchachameleon": {
+            "name": "MECCHA CHAMELEON", "appid": "4704690",
+            "aliases": ["MECCHA CHAMELEON", "Meccha Chameleon", "Chameleon"],
+            "patterns": [r"{LOCAL}\Chameleon"],
+        },
+        "eurotrucksimulator2": {
+            "name": "Euro Truck Simulator 2", "appid": "227300",
+            "aliases": ["Euro Truck Simulator 2", "euro_truck_simulator_2", "ETS2"],
+            "patterns": [],
+        },
+        "indianajonesandthegreatcircle": {
+            "name": "Indiana Jones and the Great Circle", "appid": "2677660",
+            "aliases": ["Indiana Jones and the Great Circle", "TheGreatCircle", "The Great Circle"],
+            "patterns": [r"{SAVEDGAMES}\MachineGames\TheGreatCircle"],
+        },
+        "burglignomes": {
+            "name": "Burglin' Gnomes", "appid": "3844970",
+            "aliases": ["Burglin Gnomes", "Gnomium"],
+            "patterns": [r"{LOCALLOW}\*\Gnomium"],
+        },
+        "bladeandsorcery": {
+            "name": "Blade & Sorcery", "appid": "629730",
+            "aliases": ["Blade and Sorcery", "Blade & Sorcery", "BladeAndSorcery"],
+            "patterns": [r"{LOCALLOW}\Warpfrog\BladeAndSorcery"],
+        },
+        "castnchill": {
+            "name": "Cast n Chill", "appid": "3483740",
+            "aliases": ["Cast n Chill", "CastNChill"],
+            "patterns": [r"{LOCALLOW}\Wombat Brawler\Cast n Chill"],
+        },
+        "spaceflightsimulator": {
+            "name": "Spaceflight Simulator", "appid": "1718870",
+            "aliases": ["Spaceflight Simulator", "SpaceflightSimulator"],
+            "patterns": [r"{LOCALLOW}\Stef Morojna\Spaceflight Simulator"],
+        },
+        "botanymanor": {
+            "name": "Botany Manor", "appid": "1425350", "aliases": ["Botany Manor"],
+            "patterns": [r"{LOCALLOW}\Balloon Studios\Botany Manor"],
+        },
+        "dontsleepwiththefishes": {
+            "name": "Don't Sleep With The Fishes", "appid": "4834070",
+            "aliases": ["Dont Sleep With The Fishes", "DontSleepWithTheFishes"],
+            "patterns": [r"{LOCALLOW}\DopplerGhost\DontSleepWithTheFishes"],
+        },
+        "inazumaelevenvictoryroad": {
+            "name": "INAZUMA ELEVEN: Victory Road", "appid": "2799860",
+            "aliases": ["INAZUMA ELEVEN Victory Road", "INAZUMA ELEVEN Victory Road"],
+            "patterns": [r"{LOCALLOW}\LEVEL5 Inc_\INAZUMA ELEVEN Victory Road"],
+        },
+        "thepedestrian": {
+            "name": "The Pedestrian", "appid": "466630", "aliases": ["The Pedestrian"],
+            "patterns": [r"{LOCALLOW}\Skookum Arts\The Pedestrian"],
+        },
+        "theplanetcrafter": {
+            "name": "The Planet Crafter", "appid": "1284190",
+            "aliases": ["Planet Crafter", "The Planet Crafter"],
+            "patterns": [r"{LOCALLOW}\MijuGames\Planet Crafter"],
+        },
+        "yeahyouwantthosegames": {
+            "name": "YEAH! YOU WANT \"THOSE GAMES,\" RIGHT? SO HERE YOU GO! NOW, LET'S SEE YOU CLEAR THEM!", "appid": "2348100",
+            "aliases": ["THOSE GAMES", "Yeah You Want Those Games"],
+            "patterns": [r"{LOCALLOW}\D3PUBLISHER Inc_\THOSE GAMES"],
+        },
+        "remnant2": {
+            "name": "Remnant 2",
+            "appid": "1282100",
+            "aliases": ["Remnant 2", "Remnant II"],
+            "save_and_config": True,
+            "patterns": [r"{LOCAL}\Remnant2"],
+        },
     }
 
     NON_GAME_FOLDER_NAMES = {
-        "achievements", "adobe", "amd", "apple", "atlauncher", "audacity", "blender foundation",
-        "betterdiscord", "brave", "cache", "code", "discord", "docker", "dropbox", "electron",
+        "achievements", "adobe", "amd", "apple", "atlauncher", "audacity", "blender foundation", "lua",
+        "betterdiscord", "brave", "cache", "code", "discord", "docker", "dropbox", "electron", "powershell", "windowspowershell", "modules",
         "equicord", "epicgameslauncher", "githubdesktop", "google", "gog.com", "intel", "java",
         "jetbrains", "microsoft", "mozilla", "nodejs", "notepad++", "npm",
         "nvidia", "obs-studio", "obsstudio", "openasar", "opera software", "python", "qtproject",
         "spotify", "telegram desktop", "telegramdesktop", "unity", "unreal engine", "vencord",
         "valve", "vlc", "vscode", "windows", "zoom",
+        # Non-game apps that commonly appear in AppData
+        "everything", "arena", "battle.net", "battlenet", "blizzard", "curseforge",
+        "directx", "dotnet", "eac", "easyanticheat", "epic online services",
+        "fraps", "geforce experience", "hwinfo", "icue", "logitech",
+        "mumble", "nvidia corporation", "obs", "origin", "overwolf",
+        "razer", "realtek", "redist", "rockstar games launcher", "ryzen",
+        "sharex", "steelseries", "streamlabs", "teamspeak", "twitch", "ubisoft",
+        "vulkan", "xbox", "xboxgamebar", "xboxlive",
+        # System/cache folders that appear in AppData
+        "crashreports", "crashreportclient", "cryptneturlcache", "dxcache",
+        "internet explorer", "shadercache", "d3dscache", "gpucache",
+        "code cache", "gpu cache", "service worker", "blob_storage",
+        "cache storage", "session storage", "indexeddb", "local storage",
+        "shared storage", "webrtc event logs", "crashpad", "pending",
+        "compatdata", "compatibility", "temp", "tmp",
+        "poweryoys", "unknown unity application", "unitycrashhandler64",
+        "unitycrashhandler32", "crashhandler", "dotnetruntime",
+        "asp.net", "windowsapps", "packages", "temp", "tmp",
+        "pending", "crashpad", "crashreportclient", "shadercache",
+        "d3dscache", "gpucache", "code cache", "gpu cache",
+        "service worker", "blob_storage", "cache storage",
+        "session storage", "indexeddb", "local storage",
+        "shared storage", "webrtc event logs", "compatdata",
+        "compatibility", "crashreports", "cryptneturlcache",
+        "dxcache", "internet explorer",
     }
 
     @staticmethod
@@ -274,74 +767,20 @@ class SaveScanner:
             "{PUBLICDOCS}": os.path.join(os.environ.get("PUBLIC", r"C:\Users\Public"), "Documents"),
             "{PROGRAMDATA}": os.environ.get("PROGRAMDATA", r"C:\ProgramData"),
             "{USERPROFILE}": user,
-            "{HOME}": user,
             "{SAVEDGAMES}": os.path.join(user, "Saved Games"),
             "{STEAM}": r"C:\Program Files (x86)\Steam",
+            "{UBISOFT}": os.path.join(os.environ.get("PROGRAMFILES(X86)", os.environ.get("PROGRAMFILES", r"C:\Program Files (x86)")), "Ubisoft", "Ubisoft Game Launcher"),
         }
 
     @classmethod
     def expand_vars(cls, value: str) -> str:
-        """Expand PCGamingWiki/Ludusavi-style save path placeholders."""
-        result = html.unescape(str(value or "").strip())
-        env = cls.env_map()
-        result = re.sub(r"\[\s*(%[A-Z_]+%)\s*\]", r"\1", result, flags=re.I)
-
-        placeholder_map = {
-            "<home>": env["{USERPROFILE}"],
-            "<winappdata>": env["{APPDATA}"],
-            "<winlocalappdata>": env["{LOCAL}"],
-            "<winlocalappdatalow>": env["{LOCALLOW}"],
-            "<windocuments>": env["{DOCS}"],
-            "<winpublic>": os.environ.get("PUBLIC", r"C:\Users\Public"),
-            "<winprogramdata>": env["{PROGRAMDATA}"],
-            "<steam>": env["{STEAM}"],
-            "<root>": "*",
-            "<base>": "*",
-            "<game>": "*",
-            "<osusername>": os.path.basename(env["{USERPROFILE}"].rstrip("\\/")) or "*",
-        }
-        for old, replacement in placeholder_map.items():
-            result = re.sub(re.escape(old), lambda _m, repl=replacement: repl, result, flags=re.I)
-
-        result = re.sub(
-            r"[\[\(]?\s*<\s*(?:user[-_ ]?id|store[-_ ]?user[-_ ]?id|steam[-_ ]?user[-_ ]?id|guid|uuid)\s*>\s*[\]\)]?",
-            "*",
-            result,
-            flags=re.I,
-        )
-
-        brace_replacements = {
-            "{{p|appdata}}": "{APPDATA}",
-            "{{p|localappdata}}": "{LOCAL}",
-            "{{p|localappdatalow}}": "{LOCALLOW}",
-            "{{p|userprofile}}": "{USERPROFILE}",
-            "{{p|documents}}": "{DOCS}",
-            "{{p|savedgames}}": "{SAVEDGAMES}",
-            "{{p|programdata}}": "{PROGRAMDATA}",
-            "{{p|public}}": os.environ.get("PUBLIC", r"C:\Users\Public"),
-            "{{p|steam}}": "{STEAM}",
-            "{{p|uid}}": "*",
-        }
-        for old, replacement in brace_replacements.items():
-            result = re.sub(re.escape(old), lambda _m, repl=replacement: repl, result, flags=re.I)
-
-        percent_replacements = {
-            "%APPDATA%": env["{APPDATA}"],
-            "%LOCALAPPDATA%": env["{LOCAL}"],
-            "%USERPROFILE%": env["{USERPROFILE}"],
-            "%PUBLIC%": os.environ.get("PUBLIC", r"C:\Users\Public"),
-            "%PROGRAMDATA%": env["{PROGRAMDATA}"],
-            "%HOMEPATH%": env["{USERPROFILE}"],
-        }
-        for old, replacement in percent_replacements.items():
-            result = re.sub(re.escape(old), lambda _m, repl=replacement: repl, result, flags=re.I)
-
-        for key, replacement in env.items():
+        result = str(value or "")
+        for key, replacement in cls.env_map().items():
             result = result.replace(key, replacement)
         result = os.path.expandvars(result)
         if os.sep == "/":
             result = result.replace("\\", os.sep)
-        return os.path.normpath(result)
+        return result
 
     @staticmethod
     def _dedupe(values: list[str], limit: int = 32) -> list[str]:
@@ -361,53 +800,6 @@ class SaveScanner:
         return out
 
     @classmethod
-    def _virtualized_candidates(cls, path: str) -> list[str]:
-        """Add Windows VirtualStore equivalent for exact protected paths."""
-        raw = str(path or "")
-        match = re.match(r"^([A-Z]):[\\/](Program Files(?: \(x86\))?|Windows|ProgramData)[\\/](.+)$", raw, flags=re.I)
-        if not match:
-            return []
-        local = cls.env_map()["{LOCAL}"]
-        tail = os.path.join(match.group(2), match.group(3).replace("/", os.sep).replace("\\", os.sep))
-        return [os.path.join(local, "VirtualStore", tail)]
-
-    @classmethod
-    def _steam_roots(cls) -> list[str]:
-        """Return installed Steam roots including libraryfolders.vdf entries."""
-        roots = [
-            cls.env_map()["{STEAM}"],
-            r"C:\Program Files (x86)\Steam",
-            r"C:\Program Files\Steam",
-            r"D:\Steam",
-            r"D:\Games\Steam",
-            r"E:\Steam",
-            r"E:\Games\Steam",
-        ]
-        for root in list(roots):
-            vdf = os.path.join(root, "steamapps", "libraryfolders.vdf")
-            if not os.path.isfile(vdf):
-                continue
-            try:
-                text = Path(vdf).read_text(encoding="utf-8", errors="ignore")
-                for match in re.finditer(r'"path"\s+"([^"]+)"', text):
-                    candidate = match.group(1).replace('\\\\', '\\')
-                    if os.path.isdir(candidate):
-                        roots.append(candidate)
-            except Exception:
-                pass
-        seen: set[str] = set()
-        out: list[str] = []
-        for root in roots:
-            if not root or not os.path.isdir(root):
-                continue
-            norm = os.path.normcase(os.path.normpath(root))
-            if norm in seen:
-                continue
-            seen.add(norm)
-            out.append(root)
-        return out
-
-    @classmethod
     def known_rule_for_name(cls, name: str) -> dict[str, Any] | None:
         norm = normalize_name(name)
         if not norm:
@@ -422,6 +814,7 @@ class SaveScanner:
 
     @classmethod
     def known_rule_for_pattern(cls, pattern: str) -> dict[str, Any] | None:
+        """Find the KNOWN_GAMES rule that owns a specific scan pattern."""
         wanted = str(pattern or "").lower()
         if not wanted:
             return None
@@ -436,8 +829,24 @@ class SaveScanner:
         rule = cls.known_rule_for_name(name)
         return str((rule or {}).get("name") or name or "").strip()
 
-    @staticmethod
-    def _title_save_folder_variants(name: str) -> list[str]:
+    @classmethod
+    def folder_names_for_game(cls, game: dict[str, Any]) -> list[str]:
+        raw = str(game.get("name") or "").strip()
+        values = cls._title_save_folder_variants(raw)
+        # Also generate common name variations (underscores, hyphens, no-spaces)
+        for variant in list(values):
+            values.extend(get_name_variations(variant))
+        # Remove common non-game suffixes from store titles.
+        if raw:
+            values.append(re.sub(r"\s*[-+:|]?\s*(demo|playtest|soundtrack|dedicated server)$", "", raw, flags=re.I).strip())
+        rule = cls.known_rule_for_name(raw)
+        if rule:
+            values.append(str(rule.get("name") or ""))
+            values.extend(str(item) for item in (rule.get("aliases") or []))
+        return cls._dedupe(values, limit=48)
+
+    @classmethod
+    def _title_save_folder_variants(cls, name: str) -> list[str]:
         """Generate conservative title variants used by save folders.
 
         Store titles often include trademark symbols or edition suffixes that
@@ -455,7 +864,6 @@ class SaveScanner:
             stripped = re.sub(suffix_pattern, "", value, flags=re.I).strip()
             if stripped and stripped != value:
                 variants.add(stripped)
-
         roman_pairs = [
             (r"\bPart\s+1\b", "Part I"),
             (r"\bPart\s+I\b", "Part 1"),
@@ -515,69 +923,6 @@ class SaveScanner:
                 folders.append((root + subfolder).replace("{GAME}", game_name))
         return folders
 
-    @staticmethod
-    def _clean_saved_games_name(name: str) -> str:
-        clean = re.sub(r"(?i)(?:[-_ ]?(old|backup|bak|copy|autosave|manualsave))+$", "", str(name or "")).strip(" -_()[]")
-        return clean or str(name or "").strip()
-
-    @classmethod
-    def _saved_games_child_game_dirs(cls, root: str) -> list[str]:
-        """Return likely game folders one/two levels below Saved Games.
-
-        This avoids treating a publisher folder like "TheGameBakers" as the
-        game when the real game is in a child folder such as "Cairn_RETAIL".
-        It also skips backup folders like "Game-old" so they do not become
-        separate Library entries.
-        """
-        if not os.path.isdir(root):
-            return []
-        save_tokens = {"save", "saves", "savedata", "savegames", "slot", "profile", "users", "persistent"}
-        out: list[str] = []
-        try:
-            for first in Path(root).iterdir():
-                if not first.is_dir():
-                    continue
-                first_name = first.name
-                first_norm = normalize_name(first_name)
-                if first_norm in {"desktop", "downloads", "documents"}:
-                    continue
-                # A top-level backup like "Game-old" belongs to the same game;
-                # don't create a second card for it.
-                if cls._clean_saved_games_name(first_name) != first_name:
-                    continue
-                child_dirs = []
-                try:
-                    child_dirs = [child for child in first.iterdir() if child.is_dir()]
-                except Exception:
-                    child_dirs = []
-                promoted = False
-                for child in child_dirs[:40]:
-                    child_norm = normalize_name(child.name)
-                    if child_norm in save_tokens or cls._clean_saved_games_name(child.name) != child.name:
-                        continue
-                    if cls._has_save_like_content(str(child)):
-                        out.append(str(child))
-                        promoted = True
-                if not promoted and cls._has_save_like_content(str(first)):
-                    out.append(str(first))
-        except Exception:
-            pass
-        return cls._dedupe(out, limit=300)
-
-
-    @classmethod
-    def folder_names_for_game(cls, game: dict[str, Any]) -> list[str]:
-        raw = str(game.get("name") or "").strip()
-        values = cls._title_save_folder_variants(raw)
-        # Remove common non-game suffixes from store titles.
-        if raw:
-            values.append(re.sub(r"\s*[-+:|]?\s*(demo|playtest|soundtrack|dedicated server)$", "", raw, flags=re.I).strip())
-        rule = cls.known_rule_for_name(raw)
-        if rule:
-            values.append(str(rule.get("name") or ""))
-            values.extend(str(item) for item in (rule.get("aliases") or []))
-        return cls._dedupe(values, limit=24)
-
     @classmethod
     def people_for_game(cls, game: dict[str, Any]) -> list[str]:
         values: list[str] = []
@@ -621,15 +966,10 @@ class SaveScanner:
         source: str = "",
     ) -> None:
         expanded = cls.expand_vars(pattern)
-        matches: list[str] = []
-        for candidate in [expanded, *cls._virtualized_candidates(expanded)]:
-            try:
-                if any(ch in candidate for ch in "*?"):
-                    matches.extend(glob.glob(candidate))
-                elif os.path.exists(candidate):
-                    matches.append(candidate)
-            except Exception:
-                continue
+        try:
+            matches = glob.glob(expanded) if any(ch in expanded for ch in "*?") else ([expanded] if os.path.exists(expanded) else [])
+        except Exception:
+            matches = []
         for match in matches:
             entry = cls._path_entry(match, category, description, source)
             if not entry:
@@ -646,15 +986,6 @@ class SaveScanner:
         people = cls.people_for_game(game)
         results: list[dict[str, Any]] = []
         seen: set[str] = set()
-
-        # Steam cloud/userdata is an exact AppID-based signal. This mirrors the
-        # save-backup scanner's Steam userdata rule, but stays bounded to the
-        # selected game instead of scanning every userdata folder.
-        appid = str(game.get("appid") or "").strip()
-        if appid.isdigit():
-            for steam_root in cls._steam_roots():
-                cls._add_matches(results, seen, os.path.join(steam_root, "userdata", "*", appid, "remote"), "Save Files", "Steam Cloud save folder", "Known rule")
-                cls._add_matches(results, seen, os.path.join(steam_root, "userdata", "*", appid), "Save Files", "Steam userdata folder", "Known rule")
 
         # Curated patterns first. These solve folder-name mismatches like
         # HITMAN3 and ACE without guessing through unrelated software folders.
@@ -685,8 +1016,23 @@ class SaveScanner:
                 (r"{APPDATA}\*\Epic\*\{GAME}", "Save Files", "Epic nested user save folder"),
                 (r"{LOCAL}\*\Epic\*\{GAME}", "Save Files", "Epic nested local save folder"),
             ]
+            # Unity engine common paths
+            unity_templates = [
+                (r"{LOCALLOW}\{GAME}", "Save Files", "Unity LocalLow save folder"),
+                (r"{LOCALLOW}\{GAME}\*\*", "Save Files", "Unity LocalLow nested save"),
+                (r"{LOCAL}\{GAME}\data", "Save Files", "Game data folder"),
+                (r"{LOCAL}\{GAME}\profiles", "Save Files", "Game profiles folder"),
+                (r"{SAVEDGAMES}\{GAME}\*", "Save Files", "Saved Games nested folder"),
+                (r"{DOCS}\{GAME}\*", "Save Files", "Documents nested folder"),
+            ]
+            for template, category, description in unity_templates:
+                cls._add_matches(results, seen, template.replace("{GAME}", game_name), category, description)
+
             for template, category, description in templates:
                 cls._add_matches(results, seen, template.replace("{GAME}", game_name), category, description)
+
+            # Focused Saved Games/Documents search for this specific game.
+            # This is how v3.1 finds games in those locations without broad scanning.
             for candidate in cls._saved_games_folder_candidates(game_name):
                 cls._add_matches(results, seen, candidate, "Save Files", "Saved Games/Documents save folder")
 
@@ -703,7 +1049,13 @@ class SaveScanner:
                     (r"{LOCAL}\{PERSON}\Epic\*\{GAME}", "Save Files", "Publisher Epic nested local save folder"),
                 ]
                 for template, category, description in person_templates:
-                    cls._add_matches(results, seen, template.replace("{PERSON}", person).replace("{GAME}", game_name), category, description)
+                    cls._add_matches(
+                        results,
+                        seen,
+                        template.replace("{PERSON}", person).replace("{GAME}", game_name),
+                        category,
+                        description,
+                    )
 
         results.sort(key=lambda item: (item["category"], item["path"].lower()))
         return results
@@ -769,98 +1121,27 @@ class SaveScanner:
 
     @staticmethod
     def _strip_wiki_markup(text: str) -> str:
-        value = html.unescape(text or "")
+        value = text or ""
         replacements = {
             r"{{p|appdata}}": "{APPDATA}",
             r"{{p|localappdata}}": "{LOCAL}",
-            r"{{p|localappdatalow}}": "{LOCALLOW}",
             r"{{p|userprofile}}": "{USERPROFILE}",
             r"{{p|documents}}": "{DOCS}",
             r"{{p|savedgames}}": "{SAVEDGAMES}",
             r"{{p|programdata}}": "{PROGRAMDATA}",
             r"{{p|public}}": os.environ.get("PUBLIC", r"C:\Users\Public"),
             r"{{p|steam}}": "{STEAM}",
-            r"{{p|uid}}": "*",
         }
         for old, new in replacements.items():
             # Lambda avoids re.sub interpreting Windows paths as escapes (\U).
-            value = re.sub(re.escape(old), lambda _match, replacement=new: replacement, value, flags=re.I)
-        # Markdown links from copied PCGW text, MediaWiki external links, and wiki links.
-        value = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", value)
+            value = re.sub(re.escape(old), lambda _m, replacement=new: replacement, value, flags=re.I)
         value = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", value)
         value = re.sub(r"\[\[([^\]|]+\|)?([^\]]+)\]\]", r"\2", value)
         value = value.replace("&lt;", "<").replace("&gt;", ">")
-        protected: dict[str, str] = {}
-        def protect_placeholder(match: re.Match[str]) -> str:
-            key = f"__GHP_PLACEHOLDER_{len(protected)}__"
-            protected[key] = match.group(0)
-            return key
-        value = re.sub(r"<(?:home|winAppData|winLocalAppData|winLocalAppDataLow|winDocuments|winPublic|winProgramData|steam|user[-_ ]?id|store[-_ ]?user[-_ ]?id|steam[-_ ]?user[-_ ]?id|guid|uuid)>", protect_placeholder, value, flags=re.I)
-        value = re.sub(r"<br\s*/?>", "\n", value, flags=re.I)
-        value = re.sub(r"<[^>]+>", " ", value)
-        for key, original in protected.items():
-            value = value.replace(key, original)
+        value = re.sub(r"<[^>]+>", "*", value)
         value = re.sub(r"{{[^{}]*}}", "", value)
         value = value.replace("[*]", "*")
         return value.strip()
-
-    @staticmethod
-    def _looks_like_windows_save_path(value: str) -> bool:
-        low = str(value or "").lower()
-        if any(token in low for token in ("macos", "os x", "linux", "android", "ios", "switch", "playstation")):
-            return False
-        return any(token in low for token in (
-            "{appdata}", "{local}", "{locallow}", "{docs}", "{userprofile}", "{savedgames}",
-            "{programdata}", "{steam}", "%appdata%", "%localappdata%", "%userprofile%",
-            "%programdata%", "<win", "<home>", "c:\\", "c:/",
-        ))
-
-    @classmethod
-    def _clean_path_candidate(cls, value: str) -> str:
-        candidate = cls._strip_wiki_markup(value)
-        candidate = re.sub(r"\s+", " ", candidate).strip().strip(" .;,:|\"'")
-        # PCGW often wraps placeholder notes in square brackets, e.g. [<user-id>].
-        candidate = re.sub(r"\[\s*(<[^>]+>|%[A-Z_]+%)\s*\]", r"\1", candidate, flags=re.I)
-        candidate = candidate.replace("/", "\\")
-        return candidate
-
-    @classmethod
-    def _extract_path_candidates_from_text(cls, text: str, context: str = "") -> list[tuple[str, str]]:
-        cleaned = cls._strip_wiki_markup(text)
-        if not cls._looks_like_windows_save_path(cleaned):
-            return []
-        results: list[tuple[str, str]] = []
-        pattern = re.compile(
-            r"(?:\{(?:APPDATA|LOCAL|LOCALLOW|DOCS|USERPROFILE|SAVEDGAMES|PROGRAMDATA|STEAM|HOME)\}|%[A-Z_]+%|<(?:home|winAppData|winLocalAppData|winLocalAppDataLow|winDocuments|winPublic|winProgramData|steam)>|[A-Z]:[\\/])[^|\n\r}]*",
-            flags=re.I,
-        )
-        for match in pattern.finditer(cleaned):
-            candidate = cls._clean_path_candidate(match.group(0))
-            candidate = re.split(r"\s{2,}|\t|</td>|</tr>", candidate)[0].strip()
-            if len(candidate) < 5 or not cls._looks_like_windows_save_path(candidate):
-                continue
-            low = f"{context} {cleaned} {candidate}".lower()
-            is_config = any(token in low for token in ("config", "configuration", "settings", ".ini", ".cfg"))
-            kind = "Config Files" if is_config else "Save Files"
-            results.append((candidate, kind))
-        return results
-
-    @staticmethod
-    def _dedupe_path_kinds(results: list[tuple[str, str]], limit: int = 24) -> list[tuple[str, str]]:
-        seen: set[str] = set()
-        out: list[tuple[str, str]] = []
-        for path, kind in results:
-            path = str(path or "").strip()
-            if not path:
-                continue
-            key = path.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            out.append((path, kind))
-            if len(out) >= limit:
-                break
-        return out
 
     @classmethod
     def _extract_pcgw_paths(cls, wikitext: str) -> list[tuple[str, str]]:
@@ -875,49 +1156,117 @@ class SaveScanner:
         results: list[tuple[str, str]] = []
         for raw_line in section.splitlines():
             line = raw_line.strip()
-            if line:
-                results.extend(cls._extract_path_candidates_from_text(line, line))
-        return cls._dedupe_path_kinds(results)
-
-    @classmethod
-    def _pcgw_sections(cls, title: str) -> list[dict[str, Any]]:
-        if not title:
-            return []
-        data = cls._pcgw_api_json({"action": "parse", "format": "json", "page": title, "prop": "sections", "formatversion": "2"})
-        try:
-            return list(data["parse"]["sections"])
-        except Exception:
-            return []
-
-    @classmethod
-    def _pcgw_section_html(cls, title: str, section_index: str) -> str:
-        if not title or not section_index:
-            return ""
-        data = cls._pcgw_api_json({"action": "parse", "format": "json", "page": title, "section": str(section_index), "formatversion": "2"})
-        try:
-            return str(data["parse"]["text"])
-        except Exception:
-            return ""
-
-    @classmethod
-    def _extract_pcgw_paths_from_html(cls, section_html: str) -> list[tuple[str, str]]:
-        if not section_html:
-            return []
-        text = re.sub(r"<br\s*/?>", "\n", section_html, flags=re.I)
-        text = re.sub(r"</t[dh]>", "\n", text, flags=re.I)
-        text = re.sub(r"<[^>]+>", " ", text)
-        text = html.unescape(text)
-        return cls._dedupe_path_kinds(cls._extract_path_candidates_from_text(text, text))
+            low = line.lower()
+            if not any(token in low for token in ("{{p|", "%appdata%", "%localappdata%", "%userprofile%", "windows")):
+                continue
+            cleaned = cls._strip_wiki_markup(line)
+            candidates = re.findall(
+                r"(?:\{(?:APPDATA|LOCAL|LOCALLOW|DOCS|USERPROFILE|SAVEDGAMES|PROGRAMDATA|STEAM)\}|%[A-Z_]+%|[A-Z]:\\)[^|\n\r}]+",
+                cleaned,
+                flags=re.I,
+            )
+            for candidate in candidates:
+                candidate = candidate.strip().strip(" .;,:|").replace("/", "\\")
+                if len(candidate) < 5:
+                    continue
+                kind = "Config Files" if "config" in low else "Save Files"
+                results.append((candidate, kind))
+        seen: set[str] = set()
+        out: list[tuple[str, str]] = []
+        for path, kind in results:
+            key = path.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append((path, kind))
+        return out[:16]
 
     @classmethod
     def _pcgw_html_save_paths(cls, title: str) -> list[tuple[str, str]]:
+        """Fallback: parse the 'Save game data location' section HTML directly.
+
+        Ambidex uses this approach — it can catch paths that wikitext parsing
+        misses because the HTML table rows are more structured.
+        """
+        if not title:
+            return []
+        # First find the section index for "Save game data location"
+        sections_data = cls._pcgw_api_json({
+            "action": "parse", "format": "json", "page": title, "prop": "sections",
+        })
+        if not sections_data or "parse" not in sections_data:
+            return []
+        save_section_index = None
+        for section in sections_data["parse"].get("sections", []):
+            if section.get("line", "").strip().lower() == "save game data location":
+                save_section_index = section.get("index")
+                break
+        if not save_section_index:
+            return []
+
+        content_data = cls._pcgw_api_json({
+            "action": "parse", "format": "json", "page": title,
+            "section": save_section_index, "prop": "text",
+        })
+        if not content_data or "parse" not in content_data:
+            return []
+
+        html_content = ""
+        try:
+            html_content = content_data["parse"]["text"]["*"]
+        except Exception:
+            return []
+
+        row_pattern = (
+            r'<th\s+scope="row"\s+class="table-gamedata-body-system">(.*?)</th>'
+            r'\s*?<td\s+class="table-gamedata-body-location"><span[^>]*>(.*?)</span></td>'
+        )
+        store_rows = re.findall(row_pattern, html_content, re.DOTALL)
+
         results: list[tuple[str, str]] = []
-        for section in cls._pcgw_sections(title):
-            line = str(section.get("line") or "").lower()
-            if "save game data location" not in line and "configuration file" not in line:
+        seen: set[str] = set()
+
+        for store_type_raw, path_html in store_rows:
+            store_type = re.sub(r"<[^>]+>", "", store_type_raw).strip()
+            store_lower = store_type.lower()
+            if any(skip in store_lower for skip in ["linux", "macos", "os x", "playstation", "xbox", "switch", "android", "ios"]):
                 continue
-            results.extend(cls._extract_pcgw_paths_from_html(cls._pcgw_section_html(title, str(section.get("index") or ""))))
-        return cls._dedupe_path_kinds(results)
+
+            # Split by <br> tags for multiple paths per platform
+            parts = re.split(r"<br\s*/?>", path_html)
+            for idx, part in enumerate(parts):
+                clean = re.sub(r"<[^>]+>", "", part).strip()
+                if not clean or len(clean) < 5:
+                    continue
+                if any(artifact in clean for artifact in ["</th>", "<td", "</tr>", "<tr", 'class="', 'scope="']):
+                    continue
+
+                # Expand environment variables
+                expanded = clean
+                env_map_local = {
+                    "%USERPROFILE%": os.environ.get("USERPROFILE", ""),
+                    "%APPDATA%": os.environ.get("APPDATA", ""),
+                    "%LOCALAPPDATA%": os.environ.get("LOCALAPPDATA", ""),
+                    "%PUBLIC%": os.environ.get("PUBLIC", ""),
+                    "%PROGRAMDATA%": os.environ.get("PROGRAMDATA", ""),
+                }
+                for env_key, env_val in env_map_local.items():
+                    if env_key.upper() in expanded.upper():
+                        # Lambda avoids re.sub interpreting Windows paths as escapes (\U).
+                        expanded = re.sub(re.escape(env_key), lambda _m, v=env_val: v, expanded, flags=re.IGNORECASE)
+                # Also handle {{p|...}} wiki placeholders
+                expanded = cls._strip_wiki_markup(expanded)
+
+                norm_key = expanded.lower().replace("/", "\\")
+                if norm_key in seen:
+                    continue
+                seen.add(norm_key)
+
+                kind = "Config Files" if "config" in store_lower else "Save Files"
+                label = f"{store_type} [{idx + 1}]" if len(parts) > 1 else store_type
+                results.append((expanded, kind))
+
+        return results[:16]
 
     @classmethod
     def pcgw_save_paths(cls, game: dict[str, Any], fetch_missing: bool = True) -> list[dict[str, Any]]:
@@ -927,10 +1276,13 @@ class SaveScanner:
             raw_paths = cache.get(key) or []
         elif fetch_missing:
             title = cls._pcgw_page_title(game)
-            raw_paths = cls._dedupe_path_kinds([
-                *cls._extract_pcgw_paths(cls._pcgw_wikitext(title)),
-                *cls._pcgw_html_save_paths(title),
-            ])
+            # Try wikitext parsing first
+            raw_paths = cls._extract_pcgw_paths(cls._pcgw_wikitext(title))
+            # If wikitext found nothing, try HTML section parsing (ambidex approach)
+            if not raw_paths and title:
+                html_paths = cls._pcgw_html_save_paths(title)
+                if html_paths:
+                    raw_paths = html_paths
             if isinstance(cache, dict):
                 cache[key] = raw_paths
                 safe_write_json(PCGW_CACHE_FILE, cache)
@@ -1037,12 +1389,12 @@ class SaveScanner:
             (r"{LOCAL}\*\Saved\Config\Windows", "unreal_config"),
             (r"{LOCAL}\*\*\SaveGames", "publisher_savegames"),
             (r"{APPDATA}\*", "top_appdata"),
-            # Do not enumerate every Saved Games/Documents folder into the
-            # Library. Those locations are useful for focused Home searches, but
-            # Library-wide discovery must stay curated or it will turn backups,
-            # Discord mods, and utility folders into game cards.
             (r"{DOCS}\My Games\*", "mygames"),
-            (r"{LOCALLOW}\*\*", "locallow"),
+            (r"{DOCS}\*", "documents"),
+            (r"{SAVEDGAMES}\*", "savedgames"),
+            (r"{LOCALLOW}\*", "locallow"),
+            (r"{LOCALLOW}\*\*", "locallow_nested"),
+            (r"{UBISOFT}\savegames\*", "ubisoft"),
         ])
         return patterns
 
@@ -1055,10 +1407,19 @@ class SaveScanner:
             current = current.parent
             name = current.name
             norm = normalize_name(name)
-        if norm in {"saved", "savegames", "savedata", "saves", "config", "profiles", "profile", "persistent", "player", "story", "retail"}:
+        # Navigate up through save-related folder names to find the actual game.
+        if norm in {
+            "saved", "savegames", "savedata", "saves", "config", "cfg",
+            "profiles", "profile", "persistent", "player", "story", "retail",
+            "setups", "replay", "screenshots", "mods", "logs", "cache",
+            "data", "userdata", "output", "input", "bin", "build",
+            "backup", "bak", "old", "temp", "tmp", "copy", "archive",
+            "exports", "imports", "settings", "preferences", "options",
+            "autosave", "manualsave", "slots", "characters",
+        }:
             parent = current.parent
             parent_norm = normalize_name(parent.name)
-            if norm in {"savegames", "config"} and parent_norm == "saved":
+            if norm in {"savegames", "config", "cfg"} and parent_norm == "saved":
                 parent = parent.parent
             elif norm in {"savedata", "saves"} and normalize_name(parent.parent.name) == "users":
                 parent = parent.parent.parent
@@ -1073,7 +1434,6 @@ class SaveScanner:
             name = parent.name
         elif norm in {"users", "user"}:
             name = current.parent.name
-        name = cls._clean_saved_games_name(name)
         rule = cls.known_rule_for_name(name)
         return str((rule or {}).get("name") or name)
 
@@ -1086,22 +1446,22 @@ class SaveScanner:
     def _has_save_like_content(cls, path: str) -> bool:
         if not os.path.isdir(path):
             return False
-        save_words = ("save", "saves", "savegame", "savegames", "profile", "player", "slot")
+        save_words = ("save", "saves", "savegame", "savegames", "savedata", "profile", "player", "slot")
         save_exts = (".sav", ".save", ".dat", ".ini", ".cfg", ".json", ".profile", ".slot")
         try:
             checked = 0
             root_depth = len(Path(path).parts)
             for current, dirnames, filenames in os.walk(path):
                 checked += 1
-                if checked > 80:
+                if checked > 30:
                     return True
                 depth = len(Path(current).parts) - root_depth
-                if depth > 2:
+                if depth > 1:
                     dirnames[:] = []
                     continue
                 if any(any(word in normalize_name(dirname) for word in save_words) for dirname in dirnames):
                     return True
-                for file_name in filenames[:80]:
+                for file_name in filenames[:30]:
                     lowered = file_name.lower()
                     stem = normalize_name(Path(file_name).stem)
                     if lowered.endswith(save_exts) or any(word in stem for word in save_words):
@@ -1124,10 +1484,12 @@ class SaveScanner:
         rule = cls.known_rule_for_name(name)
 
         # Unknown AppData/LocalLow folders are not enough to create Library
-        # cards. For Windows "Saved Games" and Documents folders, however, the
-        # location itself is already a strong save signal, so we allow a bounded
-        # Steam lookup or a local-only card.
+        # cards. For curated known rules, always allow. For Saved Games,
+        # Documents, and LocalLow folders, allow_safe_local permits a local-only card.
+        # Skip very short names (< 4 chars) to avoid matching "cfg", "bin", etc.
         if not rule and not allow_safe_local and not allow_steam_lookup:
+            return None
+        if not rule and len(normalize_name(name)) < 4:
             return None
 
         canonical = str((rule or {}).get("name") or name).strip()
@@ -1139,16 +1501,13 @@ class SaveScanner:
                 if appid.isdigit():
                     resolved = steam_api.get_app_details(appid, timeout=2) or steam_api.seed_cache_entry(appid, canonical)
                 elif allow_steam_lookup:
-                    resolved = steam_api.search_game(canonical, timeout=2)
+                    resolved = steam_api.resolve_candidate_name(canonical)
                     if resolved:
                         resolved_name = str(resolved.get("name") or "")
                         resolved_norm = normalize_name(resolved_name)
                         canonical_norm = normalize_name(canonical)
-                        if not resolved_norm or (
-                            resolved_norm != canonical_norm
-                            and canonical_norm not in resolved_norm
-                            and resolved_norm not in canonical_norm
-                        ):
+                        # Only accept exact normalized match.
+                        if not resolved_norm or resolved_norm != canonical_norm:
                             resolved = None
             except Exception:
                 resolved = None
@@ -1179,9 +1538,9 @@ class SaveScanner:
     def discover_save_library_entries(cls, steam_api=None) -> dict[str, dict[str, Any]]:
         """Discover save-only games for Library without listing normal apps.
 
-        A candidate is added only if it is a curated known rule or if its folder
-        name resolves confidently to a Steam game. This avoids turning AppData
-        programs such as launchers into fake games.
+        A candidate is added only if it is a curated known rule. This avoids
+        turning AppData programs, Discord mods, and utility folders into game
+        cards. Focused Home search handles Saved Games/Documents separately.
         """
         found: dict[str, dict[str, Any]] = {}
         seen_paths: set[str] = set()
@@ -1206,43 +1565,55 @@ class SaveScanner:
 
                 pattern_rule = cls.known_rule_for_pattern(pattern) if kind == "known" else None
                 if pattern_rule:
-                    # Curated patterns may point at nested implementation folders
-                    # such as Documents\The Last of Us Part II\<id>\savedata or
-                    # Documents\Assetto Corsa\cfg. Keep those paths attached to
-                    # the curated game instead of treating the leaf folder as a
-                    # separate game card.
                     candidate_name = str(pattern_rule.get("name") or cls._name_from_candidate_path(match))
                 else:
                     candidate_name = cls._name_from_candidate_path(match)
-                    cleaned_candidate_name = cls._clean_saved_games_name(candidate_name)
-                    if kind.startswith("savedgames") and cleaned_candidate_name != candidate_name:
-                        # Backup folders such as "Game-old" are part of the same
-                        # game's save data, not a second game card.
-                        continue
-                    candidate_name = cleaned_candidate_name
                 known = kind == "known" or cls.known_rule_for_name(candidate_name) is not None
                 if cls._is_blocked_folder(candidate_name):
                     continue
-                if not known and not cls._has_save_like_content(match):
+                if not known and len(normalize_name(candidate_name)) < 4:
                     continue
                 rule = cls.known_rule_for_name(candidate_name)
                 if rule and rule.get("patterns_only") and kind != "known":
-                    # Some games have internal project folder names that are too
-                    # generic for engine-wide scanning. Example: LEGO Batman's
-                    # config folder uses "Dinner". For those games, only trust
-                    # the explicit curated paths, not every generic Saved folder
-                    # under that alias.
                     continue
 
-                # Library auto-discovery is intentionally strict: only
-                # curated known rules may create save-only cards. Focused Home
-                # search still checks generic Saved Games/Documents patterns for
-                # the selected title.
+                # Skip publisher folders in LocalLow (one subfolder = likely publisher).
+                # Let {LOCALLOW}\*\* catch the actual game inside.
+                if kind == "locallow" and not known and os.path.isdir(match):
+                    try:
+                        children = [d for d in os.listdir(match) if os.path.isdir(os.path.join(match, d))]
+                        if len(children) == 1:
+                            child_norm = normalize_name(children[0])
+                            if child_norm not in {"saves", "savegames", "savedata", "config", "data", "profiles", "logs", "cache"}:
+                                continue
+                    except Exception:
+                        pass
+
+                # Skip publisher folders (one non-generic subfolder = likely publisher).
+                # Let nested patterns catch the actual game inside.
+                if kind in {"locallow", "top_appdata"} and not known and os.path.isdir(match):
+                    try:
+                        children = [d for d in os.listdir(match) if os.path.isdir(os.path.join(match, d))]
+                        if len(children) == 1:
+                            child_norm = normalize_name(children[0])
+                            if child_norm not in {"saves", "savegames", "savedata", "config", "data",
+                                                  "profiles", "logs", "cache", "bin", "output"}:
+                                continue
+                    except Exception:
+                        pass
+
+                # For broad patterns, trust the name validation above.
+                # For narrow patterns (top_appdata, godot, unreal), require save content.
+                # LocalLow nested (publisher→game) allows local-only entries.
+                trusted = kind in {"locallow_nested", "documents", "savedgames"}
+                if not known and not trusted and not cls._has_save_like_content(match):
+                    continue
+
                 game = cls._resolve_library_game(
                     candidate_name,
                     steam_api=steam_api,
                     known=known,
-                    allow_safe_local=known,
+                    allow_safe_local=known or kind in {"locallow_nested", "documents", "savedgames"},
                     allow_steam_lookup=False,
                 )
                 if not game:
@@ -1285,7 +1656,7 @@ class SaveScanner:
         if rule:
             canonical = str(rule.get("name") or query).strip()
             appid = str(rule.get("appid") or "").strip()
-            game = cls._resolve_library_game(canonical, steam_api=steam_api, known=True) or {
+            game = cls._resolve_library_game(canonical, steam_api=steam_api, known=True, allow_safe_local=True) or {
                 "appid": appid,
                 "name": canonical,
                 "developers": [],

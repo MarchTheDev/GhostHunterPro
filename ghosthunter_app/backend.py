@@ -6,9 +6,13 @@ from typing import Any
 
 from .file_ops import delete_paths as delete_paths_impl
 from .file_ops import open_path as open_path_impl
+from .file_ops import backup_path as backup_path_impl
+from .file_ops import backup_game as backup_game_impl
 from .scanner import ScanEngine
 from .save_scanner import SaveScanner
 from .steam_api import SteamAPI
+from .unified_search import UnifiedSearch
+from .unified_search import UnifiedSearch
 from .storage import StateStore
 from .updater import UpdateManager
 from .utils import normalize_name
@@ -17,7 +21,7 @@ from .utils import normalize_name
 class Backend:
     THEME_OPTIONS = [
         {"id": "neon", "label": "Neon", "description": "Classic cyan and purple look."},
-        {"id": "rubellite", "label": "Rubellite", "description": "Deep rubellite red based on #660011."},
+        {"id": "rubellite", "label": "Rubellite", "description": "Deep rubellite red."},
         {"id": "midnight", "label": "Midnight", "description": "Cool blue and steel accents."},
         {"id": "ember", "label": "Ember", "description": "Warm orange and crimson accents."},
         {"id": "emerald", "label": "Emerald", "description": "Green highlights with a darker base."},
@@ -27,13 +31,13 @@ class Backend:
     FONT_OPTIONS = [
         {"id": "inter", "label": "Inter", "description": "Modern UI default with clean spacing."},
         {"id": "system", "label": "System UI", "description": "Uses the native Windows/system interface font."},
-        {"id": "dm-mono", "label": "DM Mono", "description": "Rounded mono style with softer spacing."},
+        {"id": "dm-mono", "label": "DM Mono", "description": "A crisp developer-style monospace font stack."},
         {"id": "trebuchet", "label": "Trebuchet MS", "description": "Rounded and friendly without needing bundled font files."},
         {"id": "georgia", "label": "Georgia", "description": "Elegant serif option with strong readability."},
-        {"id": "mono", "label": "JetBrains-style Mono", "description": "Sharper developer-style monospace stack."},
+        {"id": "mono", "label": "JetBrains-style Mono", "description": "A technical monospace look using local system monospace fonts."},
         {"id": "roboto-slab", "label": "Roboto Slab", "description": "A sharper slab-serif look for the whole app."},
         {"id": "roboto-condensed", "label": "Roboto Condensed", "description": "Narrower, compact interface style."},
-        {"id": "fraktur", "label": "Fraktur", "description": "Decorative gothic display style."},
+        {"id": "fraktur", "label": "Franktur", "description": "Decorative gothic display style."},
         {"id": "atkinson-hyperlegible", "label": "Atkinson Hyperlegible", "description": "Built for readability with clearer character shapes."},
     ]
 
@@ -53,6 +57,15 @@ class Backend:
             self._save()
         return self._installed_catalog
 
+    def preview_game_appid(self, appid: str) -> dict[str, Any]:
+        value = str(appid or '').strip()
+        if not value.isdigit():
+            return {"ok": False, "error": "Enter a numeric Steam AppID."}
+        game = self.steam.get_app_details(value, timeout=5)
+        if not game or str(game.get("name", "")).lower().startswith("unknown game"):
+            return {"ok": False, "error": "No public Steam game was found for this AppID."}
+        return {"ok": True, "game": game}
+
     def ping(self) -> dict[str, Any]:
         return {"ok": True, "desktop": True}
 
@@ -66,10 +79,20 @@ class Backend:
     def open_path(self, path: str) -> dict[str, Any]:
         return open_path_impl(path)
 
+    def backup_path(self, path: str, game: dict[str, Any] | None = None) -> dict[str, Any]:
+        return backup_path_impl(path, game)
+
+    def backup_game(self, game: dict[str, Any]) -> dict[str, Any]:
+        return backup_game_impl(game)
+
     def set_archived(self, appid: str, archived: bool) -> dict[str, Any]:
         self.state.set_archived(str(appid), archived)
         self._save()
         return {"ok": True, "appid": str(appid), "archived": archived}
+
+    def set_excluded(self, appid: str, excluded: bool) -> dict[str, Any]:
+        game = next((item for item in self._unified_search().library_items(set()) if str(item.get("appid")) == str(appid)), {"appid": appid, "name": f"Unknown Game ({appid})"})
+        self.state.set_excluded(game, excluded); self._save(); return {"ok": True}
 
     def get_history(self) -> list[dict[str, Any]]:
         return self.state.history()
@@ -124,10 +147,13 @@ class Backend:
                 if not appid or appid in seen:
                     continue
                 seen.add(appid)
+                image = item.get('header_image', '')
+                if not image and appid.isdigit():
+                    image = self.steam.header_image_for_appid(appid)
                 suggestions.append({
                     'id': int(appid) if appid.isdigit() else appid,
                     'name': item.get('name', f'Unknown Game ({appid})'),
-                    'tiny_image': item.get('header_image', self.steam.header_image_for_appid(appid) if appid.isdigit() else ''),
+                    'tiny_image': image,
                 })
                 if len(suggestions) >= 6:
                     return suggestions
@@ -141,6 +167,17 @@ class Backend:
             suggestions.append(item)
             if len(suggestions) >= 6:
                 break
+
+        # Enrich any suggestions still missing cover images via IGDB cache.
+        for s in suggestions:
+            if not s.get('tiny_image'):
+                try:
+                    cover = self.steam.igdb_cover_for_name(s.get('name', ''), timeout=3)
+                    if cover:
+                        s['tiny_image'] = cover
+                except Exception:
+                    pass
+
         return suggestions[:6]
 
     def set_theme(self, theme_name: str) -> dict[str, Any]:
@@ -172,11 +209,10 @@ class Backend:
         if not value:
             return {"ok": False, "error": "Use a valid hex color like #d946ef."}
         self.state.set_custom_theme_color(value)
-        if color2 is not None:
+        if color2:
             value2 = self._normalize_hex_color(color2)
-            if not value2:
-                return {"ok": False, "error": "Use a valid second hex color like #fb7185."}
-            self.state.set_custom_theme_color_2(value2)
+            if value2:
+                self.state.set_custom_theme_color_2(value2)
         if use_second is not None:
             self.state.set_custom_theme_use_second_color(bool(use_second))
         self.state.set_theme("custom")
@@ -193,14 +229,13 @@ class Backend:
         value = self._normalize_hex_color(color)
         if not value:
             return {"ok": False, "error": "Use a valid hex color like #d946ef."}
-        value2 = self._normalize_hex_color(color2 or self.state.custom_theme_color_2())
-        if not value2:
-            return {"ok": False, "error": "Use a valid second hex color like #fb7185."}
-        second_enabled = self.state.custom_theme_use_second_color() if use_second is None else bool(use_second)
         clean_name = str(name or "Custom Theme").strip()[:40] or "Custom Theme"
-        self.state.add_custom_theme_preset(clean_name, value, value2, second_enabled)
+        value2 = self._normalize_hex_color(color2 or self.state.custom_theme_color_2()) if color2 else None
+        second_enabled = bool(use_second) if use_second is not None else self.state.custom_theme_use_second_color()
+        self.state.add_custom_theme_preset(clean_name, value, value2 or '#fb7185', second_enabled)
         self.state.set_custom_theme_color(value)
-        self.state.set_custom_theme_color_2(value2)
+        if value2:
+            self.state.set_custom_theme_color_2(value2)
         self.state.set_custom_theme_use_second_color(second_enabled)
         self.state.set_theme("custom")
         self._save()
@@ -218,6 +253,81 @@ class Backend:
         self._save()
         return {"ok": True, "custom_theme_presets": self.state.custom_theme_presets()}
 
+    def rename_custom_theme_preset(self, old_name: str, new_name: str) -> dict[str, Any]:
+        presets = self.state.custom_theme_presets()
+        old_lower = str(old_name or "").strip().lower()
+        new_clean = str(new_name or "").strip()[:40]
+        if not new_clean:
+            return {"ok": False, "error": "Name cannot be empty."}
+        found = False
+        for item in presets:
+            if item.get("name", "").lower() == old_lower:
+                item["name"] = new_clean
+                found = True
+                break
+        if not found:
+            return {"ok": False, "error": "Preset not found."}
+        self.state.data["custom_theme_presets"] = presets
+        self.state.save()
+        self._save()
+        return {"ok": True, "custom_theme_presets": self.state.custom_theme_presets()}
+
+    def update_custom_theme_preset(self, name: str, color: str, color2: str | None = None, use_second: bool | None = None) -> dict[str, Any]:
+        presets = self.state.custom_theme_presets()
+        target = str(name or "").strip().lower()
+        found = False
+        for item in presets:
+            if item.get("name", "").lower() == target:
+                if color:
+                    c = self._normalize_hex_color(color)
+                    if c:
+                        item["color"] = c
+                if color2:
+                    c2 = self._normalize_hex_color(color2)
+                    if c2:
+                        item["color2"] = c2
+                if use_second is not None:
+                    item["use_second"] = bool(use_second)
+                found = True
+                break
+        if not found:
+            return {"ok": False, "error": "Preset not found."}
+        self.state.data["custom_theme_presets"] = presets
+        self.state.save()
+        self._save()
+        return {"ok": True, "custom_theme_presets": self.state.custom_theme_presets()}
+
+    def reorder_custom_theme_presets(self, drag_name: str, drop_name: str) -> dict[str, Any]:
+        presets = self.state.custom_theme_presets()
+        drag_lower = str(drag_name or "").strip().lower()
+        drop_lower = str(drop_name or "").strip().lower()
+        drag_idx = -1
+        drop_idx = -1
+        for i, item in enumerate(presets):
+            if item.get("name", "").lower() == drag_lower:
+                drag_idx = i
+            if item.get("name", "").lower() == drop_lower:
+                drop_idx = i
+        if drag_idx < 0 or drop_idx < 0 or drag_idx == drop_idx:
+            return {"ok": False, "error": "Could not reorder presets."}
+        dragged = presets.pop(drag_idx)
+        # Recalculate drop index after removal
+        drop_idx = -1
+        for i, item in enumerate(presets):
+            if item.get("name", "").lower() == drop_lower:
+                drop_idx = i
+                break
+        presets.insert(drop_idx, dragged)
+        self.state.data["custom_theme_presets"] = presets
+        self.state.save()
+        self._save()
+        return {"ok": True, "custom_theme_presets": self.state.custom_theme_presets()}
+
+    def set_font_size(self, size: int) -> dict[str, Any]:
+        self.state.set_font_size(size)
+        self._save()
+        return {"ok": True, "font_size": self.state.font_size()}
+
     def get_settings_info(self) -> dict[str, Any]:
         payload = self.updater.get_settings_payload()
         payload["theme"] = self.state.theme()
@@ -225,9 +335,10 @@ class Backend:
         payload["font"] = self.state.font()
         payload["font_options"] = self.FONT_OPTIONS
         payload["custom_theme_color"] = self.state.custom_theme_color()
+        payload["custom_theme_presets"] = self.state.custom_theme_presets()
+        payload["font_size"] = self.state.font_size()
         payload["custom_theme_color_2"] = self.state.custom_theme_color_2()
         payload["custom_theme_use_second_color"] = self.state.custom_theme_use_second_color()
-        payload["custom_theme_presets"] = self.state.custom_theme_presets()
         return payload
 
     def check_for_updates(self) -> dict[str, Any]:
@@ -250,196 +361,57 @@ class Backend:
         self._save()
         return self.scan_library(use_cached_installed=True)
 
+
+    def _unified_search(self) -> UnifiedSearch:
+        catalog = dict(self._ensure_installed_catalog())
+        # A game successfully hunted on Home has a trusted identity and cached
+        # confirmed paths. Include it in Library on the next refresh.
+        for game in self.state.history():
+            appid = str(game.get("appid") or "")
+            if appid and appid not in catalog:
+                catalog[appid] = dict(game)
+        return UnifiedSearch(self.steam, catalog)
+
+    def _unified_search(self) -> UnifiedSearch:
+        catalog = dict(self._ensure_installed_catalog())
+        # A game successfully hunted on Home has a trusted identity and cached
+        # confirmed paths. Include it in Library on the next refresh.
+        for game in self.state.history():
+            appid = str(game.get("appid") or "")
+            if appid and appid not in catalog:
+                catalog[appid] = dict(game)
+        return UnifiedSearch(self.steam, catalog)
+
     def home_search(self, query: str) -> dict[str, Any]:
-        catalog = self._ensure_installed_catalog()
-        clean_query = (query or "").strip()
-        lowered = clean_query.lower()
-        normalized_query = normalize_name(clean_query)
-
-        game = None
-        if clean_query in catalog:
-            game = catalog[clean_query]
-        else:
-            exact_norm = next(
-                (
-                    item for item in catalog.values()
-                    if normalized_query and normalize_name(str(item.get("name", ""))) == normalized_query
-                ),
-                None,
-            )
-            if exact_norm:
-                game = exact_norm
-            else:
-                exact_plain = next(
-                    (
-                        item for item in catalog.values()
-                        if lowered and lowered == str(item.get("name", "")).lower()
-                    ),
-                    None,
-                )
-                if exact_plain:
-                    game = exact_plain
-
-        # Partial matches are intentionally not used for the final Home search.
-        # They can choose the wrong game when the user searches a short name,
-        # causing unrelated paths/results. Suggestions can still show partials.
-
+        search = self._unified_search()
+        game = search.resolve_game(query)
         if not game:
-            game = self.steam.search_game(clean_query)
+            return {"ok": False, "error": "Game not found. Choose an exact game title or a search suggestion."}
 
-        if not game:
-            game = SaveScanner.find_local_game_by_save_name(clean_query, self.steam)
-
-        if not game:
-            return {"ok": False, "error": "Game not found or no leftovers/save files were found for that name."}
-
-        if not str(game.get('appid', '')).isdigit():
-            game = {**game, 'appid': ''}
-
-        # Build the same save-only index used by Library and reuse its metadata
-        # for Home. This removes the confusing split where Home and Library show
-        # different names/images/path sets for the same game.
-        try:
-            save_only_index = SaveScanner.discover_save_library_entries(self.steam)
-        except Exception:
-            save_only_index = {}
-        save_only_entry = None
-        game_appid = str(game.get("appid", ""))
-        if game_appid:
-            save_only_entry = save_only_index.get(game_appid)
-        if not save_only_entry:
-            game_norm = normalize_name(str(game.get("name", "")))
-            save_only_entry = next(
-                (entry for entry in save_only_index.values() if normalize_name(str(entry.get("name", ""))) == game_norm),
-                None,
-            )
-        if save_only_entry:
-            game = {
-                **game,
-                "name": save_only_entry.get("name") or game.get("name"),
-                "header_image": game.get("header_image") or save_only_entry.get("header_image", ""),
-                "short_description": game.get("short_description") or save_only_entry.get("short_description", ""),
-                "paths": save_only_entry.get("paths", []),
-            }
-
-        candidates = ScanEngine.generate_home_candidates(game)
-        resolved: list[dict[str, Any]] = []
-        seen: set[str] = set()
-
-        # Local save-only fallback entries can already carry detected paths.
-        for match in game.get("paths", []) or []:
-            norm = os.path.normcase(os.path.normpath(match["path"]))
-            if norm in seen:
-                continue
-            seen.add(norm)
-            resolved.append(match)
-
-        for candidate in candidates:
-            for match in ScanEngine.resolve_candidate(candidate):
-                norm = os.path.normcase(os.path.normpath(match["path"]))
-                if norm in seen:
-                    continue
-                seen.add(norm)
-                resolved.append(match)
-
-        # Also merge the full library-style AppID scan for this game so Home and
-        # Library stay consistent even when leftovers are found in non-template
-        # locations like Public Documents crack folders or Steam userdata.
-        library_index = ScanEngine.build_library_index()
-        for match in library_index.get(str(game.get("appid", "")), []):
-            norm = os.path.normcase(os.path.normpath(match["path"]))
-            if norm in seen:
-                continue
-            seen.add(norm)
-            resolved.append(match)
-
-        # Focused save/config discovery for this one game. This no longer does a
-        # broad AppData name walk, which was the reason unrelated folders like
-        # ATLauncher could appear in a Balatro search.
-        for match in SaveScanner.find_save_paths(game, include_online=True, fetch_online=True):
-            norm = os.path.normcase(os.path.normpath(match["path"]))
-            if norm in seen:
-                continue
-            seen.add(norm)
-            resolved.append(match)
-
-        if not resolved:
+        paths = search.find_paths(game, fetch_verified=True)
+        if not paths:
             return {"ok": False, "error": "No leftovers or save/config files were found for this game."}
 
-        resolved = SaveScanner.collapse_nested_paths(resolved)
-        resolved.sort(key=lambda item: (item["category"], item["path"].lower()))
+        # Artwork is intentionally independent from scanning: a failed image
+        # lookup can never break a hunt or prevent a result from being shown.
+        appid = str(game.get("appid") or "")
+        if not game.get("header_image") and appid.isdigit():
+            game = {**game, "header_image": self.steam.header_image_for_appid(appid)}
         self.state.record_history(game)
         self._save()
-        return {
-            "ok": True,
-            "game": game,
-            "paths": resolved,
-            "total_size": sum(item.get("size", 0) for item in resolved),
-        }
+        return {"ok": True, "game": game, "paths": paths, "total_size": sum(item.get("size", 0) for item in paths)}
 
     def scan_library(self, use_cached_installed: bool = False) -> dict[str, Any]:
-        hidden_set = set(self.state.archived_appids())
-        leftover_index = ScanEngine.build_library_index()
-        save_only_index = SaveScanner.discover_save_library_entries(self.steam)
-        installed_catalog = self._installed_catalog if use_cached_installed and self._installed_catalog is not None else self._ensure_installed_catalog()
-        all_appids = sorted(set(leftover_index.keys()) | set(installed_catalog.keys()) | set(save_only_index.keys()))
-        details_map = self.steam.get_many_app_details([appid for appid in all_appids if str(appid).isdigit()], timeout=3)
-        items: list[dict[str, Any]] = []
-
-        for appid in all_appids:
-            paths = list(leftover_index.get(appid, []))
-            save_only_info = save_only_index.get(appid, {})
-            for save_path in save_only_info.get("paths", []) or []:
-                paths.append(save_path)
-            installed_info = installed_catalog.get(appid) or save_only_info or {"sources": [], "name": f"Unknown Game ({appid})"}
-            fallback_name = installed_info.get("name", f"Unknown Game ({appid})")
-            meta = details_map.get(str(appid)) or self.steam.cached_library_details(str(appid), fallback_name=fallback_name)
-            if not meta.get("header_image") and save_only_info.get("header_image"):
-                meta = {**meta, "header_image": save_only_info.get("header_image", "")}
-            header_image = meta.get("header_image", "") or installed_info.get("header_image", "")
-
-            path_seen = {os.path.normcase(os.path.normpath(path["path"])) for path in paths}
-            save_game = {**meta, "appid": appid}
-            # Use cached confirmed paths too, but never fetch online while loading
-            # the Library. If Home has already cached confirmed data for a game,
-            # Library will display the same canonical result after refresh.
-            for match in SaveScanner.find_save_paths(save_game, include_online=True, fetch_online=False):
-                norm = os.path.normcase(os.path.normpath(match["path"]))
-                if norm in path_seen:
-                    continue
-                path_seen.add(norm)
-                paths.append(match)
-
-            paths = SaveScanner.collapse_nested_paths(paths)
-            paths.sort(key=lambda item: (item["category"], item["path"].lower()))
-            installed_sources = installed_info.get("sources", []) or ScanEngine.detect_installed_sources(appid, meta["name"])
-            items.append({
-                "appid": appid,
-                "name": meta.get("name", fallback_name),
-                "developers": meta.get("developers", []),
-                "publishers": meta.get("publishers", []),
-                "header_image": header_image,
-                "short_description": meta.get("short_description", ""),
-                "paths": paths,
-                "path_count": len(paths),
-                "total_size": sum(path.get("size", 0) for path in paths),
-                "archived": appid in hidden_set,
-                "hidden": appid in hidden_set,
-                "installed_sources": installed_sources,
-                "installed": bool(installed_sources),
-                "has_leftovers": bool(paths),
-            })
-
-        def library_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
-            name = str(item.get("name", ""))
-            appid = str(item.get("appid", ""))
-            details_state = str(item.get("details_state", ""))
-            is_unknown = name.lower().startswith("unknown game") or details_state == "missing" or appid.startswith("local-save:")
-            return (1 if item.get("archived") else 0, 1 if is_unknown else 0, name.lower())
-
-        items.sort(key=library_sort_key)
+        # Both screens use UnifiedSearch.find_paths(). Library is therefore a
+        # different presentation of the same canonical data, not a second scan.
+        if not use_cached_installed:
+            self._ensure_installed_catalog()
+        items = self._unified_search().library_items(set(self.state.archived_appids()))
+        excluded = self.state.excluded_games()
+        visible = [item for item in items if str(item.get("appid")) not in excluded]
+        excluded_items = [{**meta, "excluded": True, "paths": [], "path_count": 0, "total_size": 0, "archived": False, "hidden": False, "installed": False, "installed_sources": [], "has_leftovers": False} for meta in excluded.values()]
         self._save()
-        return {"ok": True, "items": items}
+        return {"ok": True, "items": visible, "excluded_items": excluded_items}
 
     def delete_paths(self, paths: list[str]) -> dict[str, Any]:
         return delete_paths_impl(paths)

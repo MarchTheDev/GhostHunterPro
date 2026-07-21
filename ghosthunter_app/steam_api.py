@@ -9,6 +9,9 @@ from typing import Any
 
 from .aliases import DELISTED_GAME_ALIASES, DELISTED_GAME_METADATA
 from .config import APP_DETAILS_URL, STEAM_CACHE_FILE, STORE_SEARCH_URL
+BONKER_API_URL = "https://api.bonker.dev/api/appdetails"
+IGDB_PROXY_URL = "https://ambidex-igdb.netlify.app/api/igdb"
+from .config import IGDB_CACHE_FILE
 from .storage import migrate_legacy_files
 from .utils import get_name_variations, normalize_name, safe_read_json, safe_write_json
 
@@ -24,10 +27,13 @@ class SteamAPI:
         }
         self.aliases = {normalize_name(name): str(appid) for name, appid in DELISTED_GAME_ALIASES.items()}
         self._cover_query_cache: dict[str, str] = {}
+        # Persistent IGDB cache: name_norm → {cover_image_url, short_description, ...}
+        self._igdb_cache: dict[str, dict[str, Any]] = safe_read_json(IGDB_CACHE_FILE, {})
         self.save_cache()
 
     def save_cache(self) -> None:
         safe_write_json(STEAM_CACHE_FILE, self.cache)
+        safe_write_json(IGDB_CACHE_FILE, self._igdb_cache)
 
     @staticmethod
     def header_image_for_appid(app_id: str) -> str:
@@ -47,6 +53,7 @@ class SteamAPI:
             "header_image": header_image,
             "short_description": payload.get("short_description") or payload.get("shortDescription") or "",
             "details_state": details_state,
+            "app_type": payload.get("type") or payload.get("app_type") or "",
         }
 
     def seed_cache_entry(self, app_id: str, name: str, **extra: Any) -> dict[str, Any]:
@@ -327,16 +334,44 @@ class SteamAPI:
                     return alias_game
             return self._cached_name_matches(query, limit=1)[0] if self._cached_name_matches(query, limit=1) else None
 
+    def _fetch_bonker_details(self, app_id: str, timeout: int = 8) -> dict[str, Any] | None:
+        """Fetch game details from bonker.dev API as a fallback."""
+        try:
+            url = f"{BONKER_API_URL}?appids={app_id}&detail=basic"
+            with urllib.request.urlopen(url, timeout=timeout) as response:
+                data = json.loads(response.read().decode("utf-8", errors="replace"))
+            if data.get("success") and data.get("data"):
+                info = data["data"]
+                return self._normalize_game_payload(app_id, {
+                    "name": info.get("name", ""),
+                    "appid": app_id,
+                    "header_image": info.get("header_image", ""),
+                    "short_description": info.get("short_description", ""),
+                    "developers": [g.get("description", "") for g in (info.get("developers") or info.get("genres") or [])[:2]],
+                    "publishers": [],
+                    "details_state": "fetched",
+                })
+        except Exception:
+            pass
+        return None
+
     def get_app_details(self, app_id: str, timeout: int = 8) -> dict[str, Any] | None:
         app_id = str(app_id)
         cached = self.cache.get(app_id)
-        if cached and not self._is_seeded_stub(app_id, cached):
+        # A previous offline failure must not permanently leave a real AppID as
+        # Unknown Game. Revalidate missing entries on later rescans.
+        if cached and not self._is_seeded_stub(app_id, cached) and cached.get("details_state") != "missing" and cached.get("app_type"):
             return cached
         try:
             url = f"{APP_DETAILS_URL}?appids={app_id}"
             with urllib.request.urlopen(url, timeout=timeout) as response:
                 data = json.loads(response.read().decode("utf-8", errors="replace"))
             if not data.get(app_id, {}).get("success"):
+                # Try bonker.dev as fallback
+                bonker_result = self._fetch_bonker_details(app_id, timeout=timeout)
+                if bonker_result:
+                    self.cache[app_id] = bonker_result
+                    return bonker_result
                 fallback_name = (cached or {}).get("name") or f"Unknown Game ({app_id})"
                 missing_payload = self._normalize_game_payload(app_id, {
                     "name": fallback_name,
@@ -353,6 +388,11 @@ class SteamAPI:
             self.cache[app_id] = result
             return result
         except Exception:
+            # Try bonker.dev as fallback when Steam API fails
+            bonker_result = self._fetch_bonker_details(app_id, timeout=timeout)
+            if bonker_result:
+                self.cache[app_id] = bonker_result
+                return bonker_result
             return cached if cached else None
 
     def get_many_app_details(self, app_ids: list[str], timeout: int = 8, chunk_size: int = 25) -> dict[str, dict[str, Any]]:
@@ -362,7 +402,7 @@ class SteamAPI:
 
         for app_id in normalized_ids:
             cached = self.cache.get(app_id)
-            if cached and not self._is_seeded_stub(app_id, cached):
+            if cached and not self._is_seeded_stub(app_id, cached) and cached.get("details_state") != "missing":
                 results[app_id] = cached
             else:
                 missing.append(app_id)
@@ -398,3 +438,133 @@ class SteamAPI:
         if candidate_norm == result_norm or candidate_norm in result_norm or result_norm in candidate_norm:
             return result
         return None
+
+    # ── IGDB integration via ambidex proxy ──────────────────────────────
+
+    def igdb_search(self, query: str, timeout: int = 10) -> list[dict[str, Any]]:
+        """Search IGDB via the ambidex proxy. Returns list of game dicts."""
+        query = (query or "").strip()
+        if not query:
+            return []
+        url = f"{IGDB_PROXY_URL}?search={urllib.parse.quote(query)}"
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as response:
+                data = json.loads(response.read().decode("utf-8", errors="replace"))
+            if isinstance(data, dict) and "error" in data:
+                return []
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+        return []
+
+    def igdb_cover_url(self, image_id: str, size: str = "t_cover_big") -> str:
+        """Build an IGDB cover image URL from an image id."""
+        if not image_id:
+            return ""
+        return f"https://images.igdb.com/igdb/image/upload/{size}/{image_id}.jpg"
+
+    def igdb_cover_for_name(self, name: str, timeout: int = 6) -> str:
+        """Fast cached cover URL lookup. Returns cover URL string or ''.
+
+        Checks the persistent IGDB cache first, then falls back to a network
+        search only if the name has never been looked up before.
+
+        Pass timeout=0 for cache-only mode (no network calls).
+        """
+        cache_key = normalize_name(name)
+        if not cache_key:
+            return ""
+
+        cached = self._igdb_cache.get(cache_key)
+        if cached is not None:
+            return cached.get("cover_image_url", "")
+
+        # Cache-only mode: don't make network calls.
+        if timeout <= 0:
+            return ""
+
+        # Cache miss — do a full IGDB lookup and store the result.
+        result = self.igdb_best_match(name, timeout=timeout)
+        if result:
+            return result.get("cover_image_url", "")
+        # Store empty result so we don't retry this name every scan.
+        self._igdb_cache[cache_key] = {"cover_image_url": "", "short_description": ""}
+        return ""
+
+    def igdb_best_match(self, query: str, timeout: int = 10) -> dict[str, Any] | None:
+        """Find the best IGDB match for a game name and return enriched data.
+
+        Returns a dict with keys: name, cover_image_url, short_description, igdb_id
+        or None if no good match found.  Results are cached persistently.
+        """
+        import difflib
+
+        cache_key = normalize_name(query)
+        if not cache_key:
+            return None
+
+        # Check persistent cache first.
+        cached = self._igdb_cache.get(cache_key)
+        if cached is not None:
+            if cached.get("cover_image_url"):
+                return cached
+            return None
+
+        results = self.igdb_search(query, timeout=timeout)
+        if not results:
+            self._igdb_cache[cache_key] = {"cover_image_url": "", "short_description": ""}
+            self.save_cache()
+            return None
+
+        query_lower = query.lower().strip()
+
+        best: dict[str, Any] | None = None
+
+        # Try exact match first
+        for game in results:
+            if game.get("name", "").lower() == query_lower:
+                best = self._extract_igdb_data(game)
+                break
+
+        # Fuzzy match with scoring (same algorithm as ambidex)
+        if not best:
+            search_words = query_lower.split()
+            scored: list[tuple[float, dict[str, Any]]] = []
+            for game in results:
+                game_name_lower = game.get("name", "").lower()
+                game_words = game_name_lower.split()
+                similarity = difflib.SequenceMatcher(None, query_lower, game_name_lower).ratio()
+                exact_start = 1.5 if game_name_lower.startswith(query_lower) else 1.0
+                all_words = 1.3 if all(w in game_words for w in search_words) else 1.0
+                extra_penalty = max(1.0 - abs(len(game_words) - len(search_words)) * 0.15, 0.5)
+                pop_bonus = 1.0 + (game.get("total_rating", 0) / 2000)
+                score = similarity * exact_start * all_words * extra_penalty * pop_bonus
+                scored.append((score, game))
+
+            scored.sort(key=lambda x: x[0], reverse=True)
+            if scored and scored[0][0] > 0.6:
+                best = self._extract_igdb_data(scored[0][1])
+
+        # Cache the result (even empty) so we don't re-query.
+        if best:
+            self._igdb_cache[cache_key] = best
+        else:
+            self._igdb_cache[cache_key] = {"cover_image_url": "", "short_description": ""}
+        self.save_cache()
+        return best
+
+    @staticmethod
+    def _extract_igdb_data(game: dict[str, Any]) -> dict[str, Any]:
+        """Pull useful fields from an IGDB game result."""
+        cover = game.get("cover") or {}
+        image_id = cover.get("image_id", "") if isinstance(cover, dict) else ""
+        summary = game.get("summary", "")
+        return {
+            "igdb_id": game.get("id"),
+            "name": game.get("name", ""),
+            "cover_image_id": image_id,
+            "cover_image_url": f"https://images.igdb.com/igdb/image/upload/t_cover_big/{image_id}.jpg" if image_id else "",
+            "short_description": summary[:200] if summary else "",
+            "total_rating": game.get("total_rating", 0),
+        }

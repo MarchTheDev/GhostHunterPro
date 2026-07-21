@@ -53,6 +53,10 @@ class ScanEngine:
         "GSE Saves",
         "SmartSteamEmu",
         "Goldberg SteamEmu Saves",
+        "Goldberg UplayEmu Saves",
+        "SKIDROW",
+        "STEAMRIP",
+        "anadius\\LSX emu\\achievement_watcher",
         "ALI213",
         "STAR",
     ]
@@ -610,11 +614,47 @@ class ScanEngine:
 
         return catalog
 
+    @staticmethod
+    def emulator_metadata_appids(folder: str, fallback: str) -> list[str]:
+        """Read shallow Goldberg/GBE text metadata for a real embedded AppID.
+
+        This never reads save binary data and never modifies files. Some
+        emulator folders use a custom outer numeric ID but retain a real Steam
+        AppID in steam_appid/config/achievement metadata.
+        """
+        ids = {str(fallback)} if str(fallback).isdigit() else set()
+        checked = 0
+        try:
+            for root, dirs, files in os.walk(folder):
+                if len(Path(root).relative_to(folder).parts) > 2:
+                    dirs[:] = []
+                    continue
+                for name in files:
+                    if checked >= 30:
+                        return sorted(ids)
+                    low = name.lower()
+                    if not (low.endswith((".txt", ".json", ".ini", ".cfg")) or "appid" in low or "steam" in low):
+                        continue
+                    checked += 1
+                    try:
+                        text = Path(root, name).read_text(encoding="utf-8", errors="ignore")[:131072]
+                    except Exception:
+                        continue
+                    for value in re.findall(r"(?:steam[ _-]?)?app[_ -]?id[^0-9]{0,12}(\d{3,10})", text, flags=re.I):
+                        ids.add(value)
+        except Exception:
+            pass
+        return sorted(ids)
+
     @classmethod
     def build_library_index(cls) -> dict[str, list[dict[str, Any]]]:
         index: dict[str, list[dict[str, Any]]] = {}
 
         def add_path(appid: str, path: str, category: str, description: str, risk: str = "safe") -> None:
+            # Steam client/system app IDs are not games and must never create
+            # Unknown Game cards from userdata/cache folders.
+            if str(appid) in {"7", "760", "8006", "241100"}:
+                return
             if not appid or not appid.isdigit() or not os.path.exists(path):
                 return
             entry = {
@@ -658,6 +698,10 @@ class ScanEngine:
             "GSE Saves": ("Crack Leftovers (GSE)", "Goldberg Steam Emu saves"),
             "SmartSteamEmu": ("Crack Leftovers (SSE)", "SmartSteamEmu data"),
             "Goldberg SteamEmu Saves": ("Crack Leftovers (Goldberg)", "Goldberg emulator saves"),
+            "Goldberg UplayEmu Saves": ("Crack Leftovers (Goldberg)", "Goldberg Uplay emulator saves"),
+            "SKIDROW": ("Crack Leftovers (SKIDROW)", "SKIDROW save data"),
+            "STEAMRIP": ("Crack Leftovers (STEAMRIP)", "STEAMRIP game data"),
+            "anadius\\LSX emu\\achievement_watcher": ("Crack Leftovers (anadius)", "anadius emulator data"),
             "ALI213": ("Crack Leftovers (ALI213)", "ALI213 crack data"),
             "STAR": ("Crack Leftovers (STAR)", "STAR app cache by AppID"),
         }
@@ -666,15 +710,41 @@ class ScanEngine:
             if not os.path.isdir(base_path):
                 continue
             for emu in cls.CRACK_EMU_NAMES:
-                root = os.path.join(base_path, emu)
+                # Some emulators have nested roots (for example Steam\CODEX).
+                # Split them explicitly instead of treating the backslash as part
+                # of a single folder name on non-Windows systems.
+                root = os.path.join(base_path, *[part for part in re.split(r"[\\/]+", emu) if part])
                 if not os.path.isdir(root):
                     continue
                 category, description = crack_meta.get(emu, ("Crack Leftovers", "Crack leftover data"))
                 try:
                     for entry in os.listdir(root):
                         full = os.path.join(root, entry)
-                        if entry.isdigit() and os.path.exists(full):
-                            add_path(entry, full, category, description)
+                        if entry.isdigit() and os.path.isdir(full):
+                            # STAR stores data as STAR\<AppID>\<SteamID>. Keep
+                            # each user folder as the displayed target so nested
+                            # saves are discovered and the AppID root is not an
+                            # unnecessarily broad delete target.
+                            if emu == "STAR":
+                                try:
+                                    steam_users = [name for name in os.listdir(full) if os.path.isdir(os.path.join(full, name))]
+                                except Exception:
+                                    steam_users = []
+                                if steam_users:
+                                    for steam_user in steam_users:
+                                        add_path(entry, os.path.join(full, steam_user), category, "STAR per-user save data")
+                                else:
+                                    add_path(entry, full, category, description)
+                            else:
+                                resolved_ids = cls.emulator_metadata_appids(full, entry)
+                                # GSE Saves commonly stores Steam AppIDs with a
+                                # trailing zero removed (e.g. 166900 → 1669000).
+                                # Index both values; invalid candidates simply
+                                # remain unresolved and do not alter files.
+                                if emu == "GSE Saves" and entry.isdigit():
+                                    resolved_ids.append(entry + "0")
+                                for resolved_id in dict.fromkeys(resolved_ids):
+                                    add_path(resolved_id, full, category, description)
                         elif os.path.isdir(full):
                             for sub in os.listdir(full):
                                 sub_full = os.path.join(full, sub)
