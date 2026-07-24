@@ -51,5 +51,3 @@ This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE
 - [nxllvxxd](https://github.com/nxllvxxd) - Contributor
 
 # NEWS
-
-v3.2 is coming soon, more things will be added and others will be fixed. ETA 2-10 days
