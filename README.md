@@ -47,7 +47,6 @@ This project is licensed under the GNU GPL v3 License. See the [LICENSE](LICENSE
 
 ## Authors and Acknowledgments
 
-- [MarchTheDev (TheMarch88)](https://github.com/MarchTheDev) - Core Developer
-- [nxllvxxd](https://github.com/nxllvxxd) - Contributor
+- [TheMarch88](https://github.com/MarchTheDev) - Core Developer
 
 # NEWS
